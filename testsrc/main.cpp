@@ -43,14 +43,13 @@ int _cmp_LASsieCoord(const modri::LASsie::Coord<tType> &nCoord1, const modri::LA
 	return 0;
 }
 
-int _cmp_LASsieGenSw(const char *nGenSw, const char *nStr)
+template <size_t tSize>
+int _cmp_LASsieStr(const modri::LASsie::String<tSize> &nLStr, const char *nStr)
 {
-	// nGenSw is a type of char[33] in LASsie class, so we need to actually check all 33 chars even if nStr ends before that
-	for (size_t i = 0; i < 33; i++)
+	for (size_t i = 0; i < (tSize + 1); i++) // +1 because LASsie string has an extra char for NULL terminator
 	{
-		Test(nGenSw[i] == *nStr);
-		if (*nStr != '\0')
-			nStr++;
+		Test(nLStr.Get()[i] == *nStr);
+		if (*nStr != '\0') nStr++;
 	}
 	return 0;
 }
@@ -58,41 +57,118 @@ int _cmp_LASsieGenSw(const char *nGenSw, const char *nStr)
 
 // Test functions
 
-static int TestLASsieInit()
+static int TestLASsieString()
 {
 	PrintFn();
 
-	modri::LASsie oLas;
-	modri::LASsie::Guid oGuidZero;
-	modri::LASsie::Coord<double> oCoordZero;
+	modri::LASsie::String<1>  oStr1;
+	modri::LASsie::String<16> oStr16;
+	modri::LASsie::String<32> oStr32;
 
-	memset(&oGuidZero, 0, sizeof(oGuidZero));
-	memset(&oCoordZero, 0, sizeof(oCoordZero));
 
-	Test(oLas.GetFileSrcId() == 0);
-	Test(oLas.IsGlobalEnc() == false);
-	Test(_cmp_LASsieGuid(oLas.GetGuid(), oGuidZero) == 0);
-	Test(oLas.GenerSw().Size() == 32);
-	Test(oLas.GenerSw().Len() == 0);
-	Test(_cmp_LASsieGenSw(oLas.GenerSw().Get(), "") == 0);
-	Test(oLas.GetCreatDay() == 0);
-	Test(oLas.GetCreatYear() == 0);
-	Test(oLas.GetPdrf() == modri::LASsie::Pdrf0);
-	Test(_cmp_LASsieCoord(oLas.GetScale(), oCoordZero) == 0);
-	Test(_cmp_LASsieCoord(oLas.GetOffset(), oCoordZero) == 0);
-	Test(_cmp_LASsieCoord(oLas.GetMax(), oCoordZero) == 0);
-	Test(_cmp_LASsieCoord(oLas.GetMin(), oCoordZero) == 0);
+	Test(oStr1.Size() == 1);
+	Test(oStr1.Len() == 0);
+	Test(_cmp_LASsieStr(oStr1, "") == 0);
+
+	oStr1.Set("");
+	Test(oStr1.Size() == 1);
+	Test(oStr1.Len() == 0);
+	Test(_cmp_LASsieStr(oStr1, "") == 0);
+
+	oStr1.Set("0");
+	Test(oStr1.Size() == 1);
+	Test(oStr1.Len() == 1);
+	Test(_cmp_LASsieStr(oStr1, "0") == 0);
+
+	oStr1.Set("01");
+	Test(oStr1.Size() == 1);
+	Test(oStr1.Len() == 1);
+	Test(_cmp_LASsieStr(oStr1, "0") == 0);
+
+
+	Test(oStr16.Size() == 16);
+	Test(oStr16.Len() == 0);
+	Test(_cmp_LASsieStr(oStr16, "") == 0);
+
+	oStr16.Set("");
+	Test(oStr16.Size() == 16);
+	Test(oStr16.Len() == 0);
+	Test(_cmp_LASsieStr(oStr16, "") == 0);
+
+	oStr16.Set("012345678901234");
+	Test(oStr16.Size() == 16);
+	Test(oStr16.Len() == 15);
+	Test(_cmp_LASsieStr(oStr16, "012345678901234") == 0);
+
+	oStr16.Set("0123456789012345");
+	Test(oStr16.Size() == 16);
+	Test(oStr16.Len() == 16);
+	Test(_cmp_LASsieStr(oStr16, "0123456789012345") == 0);
+
+	oStr16.Set("01234567890123456");
+	Test(oStr16.Size() == 16);
+	Test(oStr16.Len() == 16);
+	Test(_cmp_LASsieStr(oStr16, "0123456789012345") == 0);
+
+
+	Test(oStr32.Size() == 32);
+	Test(oStr32.Len() == 0);
+	Test(_cmp_LASsieStr(oStr32, "") == 0);
+
+	oStr32.Set("");
+	Test(oStr32.Size() == 32);
+	Test(oStr32.Len() == 0);
+	Test(_cmp_LASsieStr(oStr32, "") == 0);
+
+	oStr32.Set("0123456789012345678901234567890");
+	Test(oStr32.Size() == 32);
+	Test(oStr32.Len() == 31);
+	Test(_cmp_LASsieStr(oStr32, "0123456789012345678901234567890") == 0);
+
+	oStr32.Set("01234567890123456789012345678901");
+	Test(oStr32.Size() == 32);
+	Test(oStr32.Len() == 32);
+	Test(_cmp_LASsieStr(oStr32, "01234567890123456789012345678901") == 0);
+
+	oStr32.Set("012345678901234567890123456789012");
+	Test(oStr32.Size() == 32);
+	Test(oStr32.Len() == 32);
+	Test(_cmp_LASsieStr(oStr32, "01234567890123456789012345678901") == 0);
+
 
 	return 0;
 }
 
-static int TestLASsieSetters()
+static int TestLASsie()
 {
 	PrintFn();
 
 	modri::LASsie oLas;
 	modri::LASsie::Guid oGuidVolatile;
 	modri::LASsie::Coord<double> oCoordVolatile;
+
+
+	// Init
+
+	memset(&oGuidVolatile, 0, sizeof(oGuidVolatile));
+	memset(&oCoordVolatile, 0, sizeof(oCoordVolatile));
+
+	Test(oLas.GetFileSrcId() == 0);
+	Test(oLas.IsGlobalEnc() == false);
+	Test(_cmp_LASsieGuid(oLas.GetGuid(), oGuidVolatile) == 0);
+	Test(oLas.GenerSw().Size() == 32);
+	Test(oLas.GenerSw().Len() == 0);
+	Test(_cmp_LASsieStr(oLas.GenerSw(), "") == 0);
+	Test(oLas.GetCreatDay() == 0);
+	Test(oLas.GetCreatYear() == 0);
+	Test(oLas.GetPdrf() == modri::LASsie::Pdrf0);
+	Test(_cmp_LASsieCoord(oLas.GetScale(), oCoordVolatile) == 0);
+	Test(_cmp_LASsieCoord(oLas.GetOffset(), oCoordVolatile) == 0);
+	Test(_cmp_LASsieCoord(oLas.GetMax(), oCoordVolatile) == 0);
+	Test(_cmp_LASsieCoord(oLas.GetMin(), oCoordVolatile) == 0);
+
+
+	// {G,S}etters
 
 	oLas.SetFileSrcId(0x1234);
 	Test(oLas.GetFileSrcId() == 0x1234);
@@ -118,22 +194,7 @@ static int TestLASsieSetters()
 	Test(oLas.GenerSw().Len() == 0);
 	oLas.GenerSw().Set("Some Generating Software");
 	Test(oLas.GenerSw().Len() == 24);
-	Test(_cmp_LASsieGenSw(oLas.GenerSw().Get(), "Some Generating Software") == 0);
-	oLas.GenerSw().Set("012345678901234567890123456789");
-	Test(oLas.GenerSw().Len() == 30);
-	Test(_cmp_LASsieGenSw(oLas.GenerSw().Get(), "012345678901234567890123456789") == 0);
-	oLas.GenerSw().Set("0123456789012345678901234567891");
-	Test(oLas.GenerSw().Len() == 31);
-	Test(_cmp_LASsieGenSw(oLas.GenerSw().Get(), "0123456789012345678901234567891") == 0);
-	oLas.GenerSw().Set("01234567890123456789012345678912");
-	Test(oLas.GenerSw().Len() == 32);
-	Test(_cmp_LASsieGenSw(oLas.GenerSw().Get(), "01234567890123456789012345678912") == 0);
-	oLas.GenerSw().Set("012345678901234567890123456789123");
-	Test(oLas.GenerSw().Len() == 32); // already cuts string longer than 32 chars
-	Test(_cmp_LASsieGenSw(oLas.GenerSw().Get(), "01234567890123456789012345678912") == 0);
-	oLas.GenerSw().Set("012345678901234567890123456789123456789");
-	Test(oLas.GenerSw().Len() == 32);
-	Test(_cmp_LASsieGenSw(oLas.GenerSw().Get(), "01234567890123456789012345678912") == 0);
+	Test(_cmp_LASsieStr(oLas.GenerSw(), "Some Generating Software") == 0);
 
 	oLas.SetCreat(2016, 366);
 	Test(oLas.GetCreatDay() == 366);
@@ -169,15 +230,50 @@ static int TestLASsieSetters()
 	return 0;
 }
 
+static int TestLASsieVarLenRec()
+{
+	PrintFn();
+
+	modri::LASsie::VarLenRec oVlr;
+
+
+	// Init
+
+	Test(_cmp_LASsieStr(oVlr.UserId(), "") == 0);
+	Test(oVlr.GetRecId() == 0);
+	Test(_cmp_LASsieStr(oVlr.Desc(), "") == 0);
+
+
+	// {G,S}etters
+
+	Test(oVlr.UserId().Size() == 16);
+	Test(oVlr.UserId().Len() == 0);
+	oVlr.UserId().Set("Some User ID");
+	Test(oVlr.UserId().Len() == 12);
+	Test(_cmp_LASsieStr(oVlr.UserId(), "Some User ID") == 0);
+
+	oVlr.SetRecId(0x5678);
+	Test(oVlr.GetRecId() == 0x5678);
+
+	Test(oVlr.Desc().Size() == 32);
+	Test(oVlr.Desc().Len() == 0);
+	oVlr.Desc().Set("Some User ID");
+	Test(oVlr.Desc().Len() == 12);
+	Test(_cmp_LASsieStr(oVlr.Desc(), "Some User ID") == 0);
+
+	return 0;
+}
+
 
 // main()
 
 int main(int argc, char **argv)
 {
 	modri::LASsie::String<32> oStr;
-	
-	Test(TestLASsieInit() == 0);
-	Test(TestLASsieSetters() == 0);
+
+	Test(TestLASsieString() == 0);
+	Test(TestLASsie() == 0);
+	Test(TestLASsieVarLenRec() == 0);
 	
 	printf("=== ALL TESTS PASSED ===\n");
 

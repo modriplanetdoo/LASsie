@@ -64,20 +64,27 @@ namespace modri
 
 			class VarLenRec
 			{
-			public:
-				typedef LASsie::String<16> UserIdType;
-				typedef LASsie::String<32> RecIdType;
+				public:
+					typedef LASsie::String<16> UserIdType;
+					typedef LASsie::String<32> DescType;
 				
 				private:
 					VarLenRec::UserIdType mUserId;
 					modri::uint16 mRecId;
-					VarLenRec::RecIdType mDesc;
+					VarLenRec::DescType mDesc;
 				
 				public:
 					inline VarLenRec() { this->Reset(); }
 					inline virtual ~VarLenRec() { }
 
 					void Reset();
+
+					inline const VarLenRec::UserIdType &UserId() const { return this->mUserId; }
+					inline VarLenRec::UserIdType &UserId() { return this->mUserId; }
+					inline modri::uint16 GetRecId() const { return this->mRecId; }
+					inline void SetRecId(modri::uint16 nRecId) { this->mRecId = nRecId; }
+					inline const VarLenRec::DescType &Desc() const { return this->mDesc; }
+					inline VarLenRec::DescType &Desc() { return this->mDesc; }
 			};
 
 			typedef LASsie::String<32> GenerSwType;

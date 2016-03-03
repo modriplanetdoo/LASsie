@@ -10,10 +10,10 @@ namespace modri
 		public:
 			struct Guid
 			{
-				uint32_t sData1;
-				uint16_t sData2;
-				uint16_t sData3;
-				uint8_t sData4[8];
+				modri::uint32 sData1;
+				modri::uint16 sData2;
+				modri::uint16 sData3;
+				modri::uint8 sData4[8];
 			};
 
 			enum PointDataFormat
@@ -33,12 +33,12 @@ namespace modri
 			};
 
 		private:
-			uint16_t mFileSourceId;
+			modri::uint16 mFileSourceId;
 			bool mGlobalEncoding;
 			LASsie::Guid mGuid;
 			char mGeneratingSoftware[33]; // 32 chars + NULL terminator
-			uint16_t mCreationDay;
-			uint16_t mCreationYear;
+			modri::uint16 mCreationDay;
+			modri::uint16 mCreationYear;
 			LASsie::PointDataFormat mPointDataFormat;
 			LASsie::Coord<double> mScaleFactor;
 			LASsie::Coord<double> mOffset;
@@ -51,17 +51,17 @@ namespace modri
 
 			void Reset();
 
-			inline uint16_t GetFileSourceId() const { return this->mFileSourceId; }
-			inline void SetFileSourceId(uint16_t nFileSourceId) { this->mFileSourceId = nFileSourceId; }
+			inline modri::uint16 GetFileSourceId() const { return this->mFileSourceId; }
+			inline void SetFileSourceId(modri::uint16 nFileSourceId) { this->mFileSourceId = nFileSourceId; }
 			inline bool IsGlobalEncoding() const { return this->mGlobalEncoding; }
 			inline void SetGlobalEncoding(bool nGlobalEncoding) { this->mGlobalEncoding = nGlobalEncoding; }
 			inline const LASsie::Guid &GetGuid() const { return this->mGuid; }
 			void SetGuid(const LASsie::Guid &nGuid);
 			inline const char *GetGeneratingSoftware() const { return this->mGeneratingSoftware; }
 			void SetGeneratingSoftware(const char *nGeneratingSoftware);
-			inline uint16_t	GetCreationDay() const { return this->mCreationDay; }
-			inline uint16_t GetCreationYear() const { return this->mCreationYear; }
-			inline void SetCreation(uint16_t nCreationYear, uint16_t nCreationDay) { this->mCreationYear = nCreationYear; this->mCreationDay = nCreationDay; }
+			inline modri::uint16	GetCreationDay() const { return this->mCreationDay; }
+			inline modri::uint16 GetCreationYear() const { return this->mCreationYear; }
+			inline void SetCreation(modri::uint16 nCreationYear, modri::uint16 nCreationDay) { this->mCreationYear = nCreationYear; this->mCreationDay = nCreationDay; }
 			inline LASsie::PointDataFormat GetPointDataFormat() const { return this->mPointDataFormat; }
 			inline void SetPointDataFormat(LASsie::PointDataFormat nPointDataFormat) { this->mPointDataFormat = nPointDataFormat; }
 			inline const LASsie::Coord<double> &GetScaleFactor() const { return this->mScaleFactor; }

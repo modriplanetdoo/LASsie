@@ -10,18 +10,18 @@ namespace modri
 		public:
 			struct Guid
 			{
-				modri::uint32 sData1;
-				modri::uint16 sData2;
-				modri::uint16 sData3;
-				modri::uint8 sData4[8];
+				modri::uint32 sD1;
+				modri::uint16 sD2;
+				modri::uint16 sD3;
+				modri::uint8 sD4[8];
 			};
 
-			enum PointDataFormat
+			enum Pdrf
 			{
-				PointDataFormat0,
-				PointDataFormat1,
-				PointDataFormat2,
-				PointDataFormat3
+				Pdrf0,
+				Pdrf1,
+				Pdrf2,
+				Pdrf3
 			};
 
 			template <class tType>
@@ -32,15 +32,22 @@ namespace modri
 				tType sZ;
 			};
 
+			struct Color
+			{
+				modri::uint16 sR;
+				modri::uint16 sG;
+				modri::uint16 sB;
+			};
+
 		private:
-			modri::uint16 mFileSourceId;
-			bool mGlobalEncoding;
+			modri::uint16 mFileSrcId;
+			bool mGlobalEnc;
 			LASsie::Guid mGuid;
-			char mGeneratingSoftware[33]; // 32 chars + NULL terminator
-			modri::uint16 mCreationDay;
-			modri::uint16 mCreationYear;
-			LASsie::PointDataFormat mPointDataFormat;
-			LASsie::Coord<double> mScaleFactor;
+			char mGenerSw[33]; // 32 chars + NULL terminator
+			modri::uint16 mCreatDay;
+			modri::uint16 mCreatYear;
+			LASsie::Pdrf mPdrf;
+			LASsie::Coord<double> mScale;
 			LASsie::Coord<double> mOffset;
 			LASsie::Coord<double> mMax;
 			LASsie::Coord<double> mMin;
@@ -51,21 +58,21 @@ namespace modri
 
 			void Reset();
 
-			inline modri::uint16 GetFileSourceId() const { return this->mFileSourceId; }
-			inline void SetFileSourceId(modri::uint16 nFileSourceId) { this->mFileSourceId = nFileSourceId; }
-			inline bool IsGlobalEncoding() const { return this->mGlobalEncoding; }
-			inline void SetGlobalEncoding(bool nGlobalEncoding) { this->mGlobalEncoding = nGlobalEncoding; }
+			inline modri::uint16 GetFileSrcId() const { return this->mFileSrcId; }
+			inline void SetFileSrcId(modri::uint16 nFileSrcId) { this->mFileSrcId = nFileSrcId; }
+			inline bool IsGlobalEnc() const { return this->mGlobalEnc; }
+			inline void SetGlobalEnc(bool nGlobalEnc) { this->mGlobalEnc = nGlobalEnc; }
 			inline const LASsie::Guid &GetGuid() const { return this->mGuid; }
 			void SetGuid(const LASsie::Guid &nGuid);
-			inline const char *GetGeneratingSoftware() const { return this->mGeneratingSoftware; }
-			void SetGeneratingSoftware(const char *nGeneratingSoftware);
-			inline modri::uint16	GetCreationDay() const { return this->mCreationDay; }
-			inline modri::uint16 GetCreationYear() const { return this->mCreationYear; }
-			inline void SetCreation(modri::uint16 nCreationYear, modri::uint16 nCreationDay) { this->mCreationYear = nCreationYear; this->mCreationDay = nCreationDay; }
-			inline LASsie::PointDataFormat GetPointDataFormat() const { return this->mPointDataFormat; }
-			inline void SetPointDataFormat(LASsie::PointDataFormat nPointDataFormat) { this->mPointDataFormat = nPointDataFormat; }
-			inline const LASsie::Coord<double> &GetScaleFactor() const { return this->mScaleFactor; }
-			inline void SetScaleFactor(double nX, double nY, double nZ) { this->mScaleFactor.sX = nX; this->mScaleFactor.sY = nY; this->mScaleFactor.sZ = nZ; }
+			inline const char *GetGenerSw() const { return this->mGenerSw; }
+			void SetGenerSw(const char *nGenerSw);
+			inline modri::uint16	GetCreatDay() const { return this->mCreatDay; }
+			inline modri::uint16 GetCreatYear() const { return this->mCreatYear; }
+			inline void SetCreat(modri::uint16 nCreatYear, modri::uint16 nCreatDay) { this->mCreatYear = nCreatYear; this->mCreatDay = nCreatDay; }
+			inline LASsie::Pdrf GetPdrf() const { return this->mPdrf; }
+			inline void SetPdrf(LASsie::Pdrf nPdrf) { this->mPdrf = nPdrf; }
+			inline const LASsie::Coord<double> &GetScale() const { return this->mScale; }
+			inline void SetScale(double nX, double nY, double nZ) { this->mScale.sX = nX; this->mScale.sY = nY; this->mScale.sZ = nZ; }
 			inline const LASsie::Coord<double> &GetOffset() const { return this->mOffset; }
 			inline void SetOffset(double nX, double nY, double nZ) { this->mOffset.sX = nX; this->mOffset.sY = nY; this->mOffset.sZ = nZ; }
 			inline const LASsie::Coord<double> &GetMax() const { return this->mMax; }

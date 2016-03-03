@@ -1,5 +1,5 @@
-#ifndef LASSIE_TYPES_H
-#define LASSIE_TYPES_H
+#ifndef MODRI_LASSIE_TYPES_H
+#define MODRI_LASSIE_TYPES_H
 
 #if !defined(_MSC_VER)
 #	include <stdint.h>
@@ -28,4 +28,4 @@ namespace modri
 #endif
 }
 
-#endif // LASSIE_TYPES_H
+#endif // MODRI_LASSIE_TYPES_H

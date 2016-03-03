@@ -1,5 +1,5 @@
-#ifndef LASSIE_LASSIE_H
-#define LASSIE_LASSIE_H
+#ifndef MODRI_LASSIE_LASSIE_H
+#define MODRI_LASSIE_LASSIE_H
 
 #include "Types.h"
 
@@ -75,4 +75,4 @@ namespace modri
 		};
 }
 
-#endif // LASSIE_LASSIE_H
+#endif // MODRI_LASSIE_LASSIE_H

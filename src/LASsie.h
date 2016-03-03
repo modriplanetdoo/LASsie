@@ -8,6 +8,29 @@ namespace modri
 	class LASsie
 	{
 		public:
+			class StringHelper
+			{
+			public:
+				static void Set(char *nStr, size_t nStrSize, const char *nNewStr);
+				static size_t Len(const char *nStr, size_t nStrSize);
+			};
+			
+			template <size_t tSize>
+			class String
+			{
+				private:
+					char mStr[tSize + 1]; // tSize + NULL terminator
+
+				public:
+					inline String() { this->Set(""); }
+					inline virtual ~String() { }
+
+					inline size_t Size() const { return tSize; }
+					inline size_t Len() const { return LASsie::StringHelper::Len(this->mStr, sizeof(this->mStr)); }
+					inline const char *Get() const { return this->mStr; }
+					inline void Set(const char *nNewStr) { LASsie::StringHelper::Set(this->mStr, sizeof(this->mStr), nNewStr); }
+			};
+			
 			struct Guid
 			{
 				modri::uint32 sD1;
@@ -39,11 +62,31 @@ namespace modri
 				modri::uint16 sB;
 			};
 
+			class VarLenRec
+			{
+			public:
+				typedef LASsie::String<16> UserIdType;
+				typedef LASsie::String<32> RecIdType;
+				
+				private:
+					VarLenRec::UserIdType mUserId;
+					modri::uint16 mRecId;
+					VarLenRec::RecIdType mDesc;
+				
+				public:
+					inline VarLenRec() { this->Reset(); }
+					inline virtual ~VarLenRec() { }
+
+					void Reset();
+			};
+
+			typedef LASsie::String<32> GenerSwType;
+
 		private:
 			modri::uint16 mFileSrcId;
 			bool mGlobalEnc;
 			LASsie::Guid mGuid;
-			char mGenerSw[33]; // 32 chars + NULL terminator
+			LASsie::GenerSwType mGenerSw;
 			modri::uint16 mCreatDay;
 			modri::uint16 mCreatYear;
 			LASsie::Pdrf mPdrf;
@@ -64,8 +107,8 @@ namespace modri
 			inline void SetGlobalEnc(bool nGlobalEnc) { this->mGlobalEnc = nGlobalEnc; }
 			inline const LASsie::Guid &GetGuid() const { return this->mGuid; }
 			void SetGuid(const LASsie::Guid &nGuid);
-			inline const char *GetGenerSw() const { return this->mGenerSw; }
-			void SetGenerSw(const char *nGenerSw);
+			inline const LASsie::GenerSwType &GenerSw() const { return this->mGenerSw; }
+			inline LASsie::GenerSwType &GenerSw() { return this->mGenerSw; }
 			inline modri::uint16	GetCreatDay() const { return this->mCreatDay; }
 			inline modri::uint16 GetCreatYear() const { return this->mCreatYear; }
 			inline void SetCreat(modri::uint16 nCreatYear, modri::uint16 nCreatDay) { this->mCreatYear = nCreatYear; this->mCreatDay = nCreatDay; }

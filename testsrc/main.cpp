@@ -72,7 +72,9 @@ static int TestLASsieInit()
 	Test(oLas.GetFileSrcId() == 0);
 	Test(oLas.IsGlobalEnc() == false);
 	Test(_cmp_LASsieGuid(oLas.GetGuid(), oGuidZero) == 0);
-	Test(_cmp_LASsieGenSw(oLas.GetGenerSw(), "") == 0);
+	Test(oLas.GenerSw().Size() == 32);
+	Test(oLas.GenerSw().Len() == 0);
+	Test(_cmp_LASsieGenSw(oLas.GenerSw().Get(), "") == 0);
 	Test(oLas.GetCreatDay() == 0);
 	Test(oLas.GetCreatYear() == 0);
 	Test(oLas.GetPdrf() == modri::LASsie::Pdrf0);
@@ -112,18 +114,26 @@ static int TestLASsieSetters()
 	oLas.SetGuid(oGuidVolatile);
 	Test(_cmp_LASsieGuid(oLas.GetGuid(), oGuidVolatile) == 0);
 
-	oLas.SetGenerSw("Some Generating Software");
-	Test(_cmp_LASsieGenSw(oLas.GetGenerSw(), "Some Generating Software") == 0);
-	oLas.SetGenerSw("012345678901234567890123456789");
-	Test(_cmp_LASsieGenSw(oLas.GetGenerSw(), "012345678901234567890123456789") == 0);
-	oLas.SetGenerSw("0123456789012345678901234567891");
-	Test(_cmp_LASsieGenSw(oLas.GetGenerSw(), "0123456789012345678901234567891") == 0);
-	oLas.SetGenerSw("01234567890123456789012345678912");
-	Test(_cmp_LASsieGenSw(oLas.GetGenerSw(), "01234567890123456789012345678912") == 0);
-	oLas.SetGenerSw("012345678901234567890123456789123");
-	Test(_cmp_LASsieGenSw(oLas.GetGenerSw(), "01234567890123456789012345678912") == 0); // already cuts string longer than 32 chars
-	oLas.SetGenerSw("012345678901234567890123456789123456789");
-	Test(_cmp_LASsieGenSw(oLas.GetGenerSw(), "01234567890123456789012345678912") == 0);
+	Test(oLas.GenerSw().Size() == 32);
+	Test(oLas.GenerSw().Len() == 0);
+	oLas.GenerSw().Set("Some Generating Software");
+	Test(oLas.GenerSw().Len() == 24);
+	Test(_cmp_LASsieGenSw(oLas.GenerSw().Get(), "Some Generating Software") == 0);
+	oLas.GenerSw().Set("012345678901234567890123456789");
+	Test(oLas.GenerSw().Len() == 30);
+	Test(_cmp_LASsieGenSw(oLas.GenerSw().Get(), "012345678901234567890123456789") == 0);
+	oLas.GenerSw().Set("0123456789012345678901234567891");
+	Test(oLas.GenerSw().Len() == 31);
+	Test(_cmp_LASsieGenSw(oLas.GenerSw().Get(), "0123456789012345678901234567891") == 0);
+	oLas.GenerSw().Set("01234567890123456789012345678912");
+	Test(oLas.GenerSw().Len() == 32);
+	Test(_cmp_LASsieGenSw(oLas.GenerSw().Get(), "01234567890123456789012345678912") == 0);
+	oLas.GenerSw().Set("012345678901234567890123456789123");
+	Test(oLas.GenerSw().Len() == 32); // already cuts string longer than 32 chars
+	Test(_cmp_LASsieGenSw(oLas.GenerSw().Get(), "01234567890123456789012345678912") == 0);
+	oLas.GenerSw().Set("012345678901234567890123456789123456789");
+	Test(oLas.GenerSw().Len() == 32);
+	Test(_cmp_LASsieGenSw(oLas.GenerSw().Get(), "01234567890123456789012345678912") == 0);
 
 	oLas.SetCreat(2016, 366);
 	Test(oLas.GetCreatDay() == 366);
@@ -164,6 +174,8 @@ static int TestLASsieSetters()
 
 int main(int argc, char **argv)
 {
+	modri::LASsie::String<32> oStr;
+	
 	Test(TestLASsieInit() == 0);
 	Test(TestLASsieSetters() == 0);
 	

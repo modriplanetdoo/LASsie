@@ -49,8 +49,30 @@ namespace modri
 			inline LASsie() { this->Reset(); }
 			inline virtual ~LASsie() { }
 
-			void Reset() { }
-	};
+			void Reset();
+
+			inline uint16_t GetFileSourceId() const { return this->mFileSourceId; }
+			inline void SetFileSourceId(uint16_t nFileSourceId) { this->mFileSourceId = nFileSourceId; }
+			inline bool IsGlobalEncoding() const { return this->mGlobalEncoding; }
+			inline void SetGlobalEncoding(bool nGlobalEncoding) { this->mGlobalEncoding = nGlobalEncoding; }
+			inline const LASsie::Guid &GetGuid() const { return this->mGuid; }
+			void SetGuid(const LASsie::Guid &nGuid);
+			inline const char *GetGeneratingSoftware() const { return this->mGeneratingSoftware; }
+			void SetGeneratingSoftware(const char *nGeneratingSoftware);
+			inline uint16_t	GetCreationDay() const { return this->mCreationDay; }
+			inline uint16_t GetCreationYear() const { return this->mCreationYear; }
+			inline void SetCreation(uint16_t nCreationYear, uint16_t nCreationDay) { this->mCreationYear = nCreationYear; this->mCreationDay = nCreationDay; }
+			inline LASsie::PointDataFormat GetPointDataFormat() const { return this->mPointDataFormat; }
+			inline void SetPointDataFormat(LASsie::PointDataFormat nPointDataFormat) { this->mPointDataFormat = nPointDataFormat; }
+			inline const LASsie::Coord<double> &GetScaleFactor() const { return this->mScaleFactor; }
+			inline void SetScaleFactor(double nX, double nY, double nZ) { this->mScaleFactor.sX = nX; this->mScaleFactor.sY = nY; this->mScaleFactor.sZ = nZ; }
+			inline const LASsie::Coord<double> &GetOffset() const { return this->mOffset; }
+			inline void SetOffset(double nX, double nY, double nZ) { this->mOffset.sX = nX; this->mOffset.sY = nY; this->mOffset.sZ = nZ; }
+			inline const LASsie::Coord<double> &GetMax() const { return this->mMax; }
+			inline void SetMax(double nX, double nY, double nZ) { this->mMax.sX = nX; this->mMax.sY = nY; this->mMax.sZ = nZ; }
+			inline const LASsie::Coord<double> &GetMin() const { return this->mMin; }
+			inline void SetMin(double nX, double nY, double nZ) { this->mMin.sX = nX; this->mMin.sY = nY; this->mMin.sZ = nZ; }
+		};
 }
 
 #endif // LASSIE_LASSIE_H

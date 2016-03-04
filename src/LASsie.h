@@ -123,9 +123,9 @@ namespace modri
 					inline modri::uint16 GetInten() const { return this->mInten; }
 					inline void SetInten(modri::uint16 nInten) { this->mInten = nInten; }
 					inline modri::uint8 GetRetNum() const { return this->mRetNum; }
-					inline void SetRetNum(modri::uint8 nRetNum) { this->mRetNum = ((nRetNum <= 5) ? nRetNum : 0); }
+					inline void SetRetNum(modri::uint8 nRetNum) { this->mRetNum = nRetNum; }
 					inline modri::uint8 GetRetTotal() const { return this->mRetTotal; }
-					inline void SetRetTotal(modri::uint8 nRetTotal) { this->mRetTotal = ((nRetTotal <= 5) ? nRetTotal : 0); }
+					inline void SetRetTotal(modri::uint8 nRetTotal) { this->mRetTotal = nRetTotal; }
 					inline bool GetScanDirFlag() const { return this->mScanDirFlag; }
 					inline void SetScanDirFlag(bool nScanDirFlag) { this->mScanDirFlag = nScanDirFlag; }
 					inline bool IsFlightEdge() const { return this->mFlightEdge; }
@@ -133,7 +133,7 @@ namespace modri
 					inline modri::uint8 GetClassif() const { return this->mClassif; }
 					inline void SetClassif(modri::uint8 nClassif) { this->mClassif = nClassif; }
 					inline modri::sint8 GetScanAngle() const { return this->mScanAngle; }
-					inline void SetScanAngle(modri::sint8 nScanAngle) { this->mScanAngle = ((nScanAngle >= -90 && nScanAngle <= 90) ? nScanAngle : 0); }
+					inline void SetScanAngle(modri::sint8 nScanAngle) { this->mScanAngle = nScanAngle; }
 					inline modri::uint8 GetUserData() const { return this->mUserData; }
 					inline void SetUserData(modri::uint8 nUserData) { this->mUserData = nUserData; }
 					inline modri::uint16 GetPointSrcId() const { return this->mPointSrcId; }
@@ -161,8 +161,14 @@ namespace modri
 			class InoutIface
 			{
 				public:
-					virtual bool Read(void *nBfr, size_t nBfrSize, size_t &nReadSize) const = 0;
-					virtual bool Write(const void *nData, size_t nDataSize) const = 0;
+					virtual bool Read(void *nBfr, size_t nBfrSize, size_t &nReadSize) = 0;
+					virtual bool Write(const void *nData, size_t nDataSize) = 0;
+			};
+
+			enum LastError
+			{
+				leNone,
+
 			};
 
 		private:
@@ -179,7 +185,9 @@ namespace modri
 			LASsie::CoordEdgeType mMin;
 
 			const LASsie::RecProviderIface *mRecProvider;
-			const LASsie::InoutIface *mInout;
+			LASsie::InoutIface *mInout;
+
+			mutable LASsie::LastError mLastError;
 
 		public:
 			inline LASsie() { this->Reset(); }
@@ -210,7 +218,12 @@ namespace modri
 			inline void SetMin(double nX, double nY, double nZ) { this->mMin.sX = nX; this->mMin.sY = nY; this->mMin.sZ = nZ; }
 
 			inline void SetRecProvider(const LASsie::RecProviderIface *nRecProvider) { this->mRecProvider = nRecProvider; }
-			inline void SetInout(const LASsie::InoutIface *nInout) { this->mInout = nInout; }
+			inline void SetInout(LASsie::InoutIface *nInout) { this->mInout = nInout; }
+
+			inline LASsie::LastError GetLastError() const { return this->mLastError; }
+
+			// bool Parse() will come later
+			bool Generate();
 		};
 }
 

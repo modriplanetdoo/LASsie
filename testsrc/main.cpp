@@ -16,6 +16,42 @@
 #define Test(N_CND) { if ((N_CND) == false) { printf(_file_line ": no error message\n"); return 1; } }
 
 
+// Test helper classes
+
+template <size_t tSize>
+class _local_Inout : public modri::LASsie::InoutIface
+{
+	private:
+		modri::uint8 mBfr[tSize];
+		size_t mBfrOff;
+
+	public:
+		inline _local_Inout() { this->Reset(); }
+		
+		inline void Reset() { this->mBfrOff = 0; }
+		inline size_t GetBfrSize() const { return tSize; }
+		inline size_t GetBfrLen() const { return this->mBfrOff; }
+		inline const modri::uint8 *GetBfr() const { return this->mBfr; }
+		
+		virtual bool Read(void *nBfr, size_t nBfrSize, size_t &nReadSize)
+		{
+			return false;
+		}
+
+		virtual bool Write(const void *nData, size_t nDataSize)
+		{
+			if ((tSize - this->mBfrOff) >= nDataSize)
+			{
+				memcpy((this->mBfr + this->mBfrOff), nData, nDataSize);
+				this->mBfrOff += nDataSize;
+				return true;
+			}
+			else
+				return false;
+		}
+};
+
+
 // Test helper functions
 
 int _cmp_LASsieGuid(const modri::LASsie::Guid &nGuid1, const modri::LASsie::Guid &nGuid2)
@@ -57,6 +93,16 @@ int _cmp_LASsieStr(const modri::LASsie::String<tSize> &nLStr, const char *nStr)
 	for (size_t i = 0; i < (tSize + 1); i++) // +1 because LASsie string has an extra char for NULL terminator
 	{
 		Test(nLStr.Get()[i] == *nStr);
+		if (*nStr != '\0') nStr++;
+	}
+	return 0;
+}
+
+int _cmp_LASsieStr(const char *nStr, const modri::uint8 *nBfrPtr, size_t nBfrSize)
+{
+	for (size_t i = 0; i < nBfrSize; i++)
+	{
+		Test(nBfrPtr[i] == *nStr);
 		if (*nStr != '\0') nStr++;
 	}
 	return 0;
@@ -311,15 +357,11 @@ static int TestLASsiePointDataRec()
 	oPdr.SetInten(0xF0A5);
 	Test(oPdr.GetInten() == 0xF0A5);
 
-	oPdr.SetRetNum(5);
-	Test(oPdr.GetRetNum() == 5);
-	oPdr.SetRetNum(6); // more than the value 5 not allowed
-	Test(oPdr.GetRetNum() == 0);
+	oPdr.SetRetNum(255); // Value checking will happen at generation time
+	Test(oPdr.GetRetNum() == 255);
 
-	oPdr.SetRetTotal(5);
-	Test(oPdr.GetRetTotal() == 5);
-	oPdr.SetRetTotal(6); // more than the value 5 not allowed
-	Test(oPdr.GetRetTotal() == 0);
+	oPdr.SetRetTotal(255); // Value checking will happen at generation time
+	Test(oPdr.GetRetTotal() == 255);
 
 	oPdr.SetScanDirFlag(true);
 	Test(oPdr.GetScanDirFlag() == true);
@@ -334,14 +376,10 @@ static int TestLASsiePointDataRec()
 	oPdr.SetClassif(0xA5);
 	Test(oPdr.GetClassif() == 0xA5);
 
-	oPdr.SetScanAngle(90);
-	Test(oPdr.GetScanAngle() == 90);
-	oPdr.SetScanAngle(91); // value over 90 (degrees) not allowed
-	Test(oPdr.GetScanAngle() == 0);
-	oPdr.SetScanAngle(-90);
-	Test(oPdr.GetScanAngle() == -90);
-	oPdr.SetScanAngle(-91); // value under -90 (degrees) not allowed
-	Test(oPdr.GetScanAngle() == 0);
+	oPdr.SetScanAngle(127); // Value checking will happen at generation time
+	Test(oPdr.GetScanAngle() == 127);
+	oPdr.SetScanAngle(-128);
+	Test(oPdr.GetScanAngle() == -128);
 
 	oPdr.SetUserData(0xBB);
 	Test(oPdr.GetUserData() == 0xBB);
@@ -361,6 +399,125 @@ static int TestLASsiePointDataRec()
 	return 0;
 }
 
+static int TestLASsieGenerate()
+{
+	PrintFn();
+
+	modri::LASsie oLas;
+	modri::LASsie::Guid oGuid;
+	_local_Inout<226> oInoutTooSmall;
+	_local_Inout<227> oInout;
+	const modri::uint8 *oBfrPtr;
+
+
+	// Setting
+
+	oGuid.sD1 = 0xFEDCBA98;
+	oGuid.sD2 = 0x7654;
+	oGuid.sD3 = 0x3210;
+	oGuid.sD4[0] = 0xFE;
+	oGuid.sD4[1] = 0xDC;
+	oGuid.sD4[2] = 0xBA;
+	oGuid.sD4[3] = 0x98;
+	oGuid.sD4[4] = 0x76;
+	oGuid.sD4[5] = 0x54;
+	oGuid.sD4[6] = 0x32;
+	oGuid.sD4[7] = 0x10;
+
+	oLas.SetFileSrcId(0x1234);
+	oLas.SetGlobalEnc(true);
+	oLas.SetGuid(oGuid);
+	oLas.GenerSw().Set("Some Generating Software");
+	oLas.SetCreat(2016, 366);
+	oLas.SetPdrf(modri::LASsie::Pdrf3);
+	oLas.SetScale(1.1, 1.2, 1.3);
+	oLas.SetOffset(2.1, 2.2, 2.3);
+	oLas.SetMax(3.1, 3.2, 3.3);
+	oLas.SetMin(4.1, 4.2, 4.3);
+
+
+	// Generating
+
+	oLas.SetInout(&oInoutTooSmall);
+	Test(oLas.Generate() == false);
+
+	oLas.SetInout(&oInout);
+	Test(oLas.Generate() == true);
+	Test(oInout.GetBfrLen() == oInout.GetBfrSize());
+	oBfrPtr = oInout.GetBfr();
+
+
+	// Verifying
+
+	// File signature
+	Test(oBfrPtr[0] == 'L');
+	Test(oBfrPtr[1] == 'A');
+	Test(oBfrPtr[2] == 'S');
+	Test(oBfrPtr[3] == 'F');
+	oBfrPtr += 4;
+
+	// File Source ID
+	Test(oBfrPtr[0] == 0x34);
+	Test(oBfrPtr[1] == 0x12);
+	oBfrPtr += 2;
+
+	// Global Encoding
+	Test(oBfrPtr[0] == 0x01);
+	Test(oBfrPtr[1] == 0x00);
+	oBfrPtr += 2;
+
+	// GUID data 1
+	Test(oBfrPtr[0] == 0x98);
+	Test(oBfrPtr[1] == 0xBA);
+	Test(oBfrPtr[2] == 0xDC);
+	Test(oBfrPtr[3] == 0xFE);
+	oBfrPtr += 4;
+
+	// GUID data 2
+	Test(oBfrPtr[0] == 0x54);
+	Test(oBfrPtr[1] == 0x76);
+	oBfrPtr += 2;
+
+	// GUID data 3
+	Test(oBfrPtr[0] == 0x10);
+	Test(oBfrPtr[1] == 0x32);
+	oBfrPtr += 2;
+
+	// GUID data 4
+	Test(oBfrPtr[0] == 0xFE);
+	Test(oBfrPtr[1] == 0xDC);
+	Test(oBfrPtr[2] == 0xBA);
+	Test(oBfrPtr[3] == 0x98);
+	Test(oBfrPtr[4] == 0x76);
+	Test(oBfrPtr[5] == 0x54);
+	Test(oBfrPtr[6] == 0x32);
+	Test(oBfrPtr[7] == 0x10);
+	oBfrPtr += 8;
+
+	// Version {Major,Minor}
+	Test(*oBfrPtr++ == 1);
+	Test(*oBfrPtr++ == 2);
+
+	// System Identifier
+	Test(_cmp_LASsieStr("LASsie Library v1.0", oBfrPtr, 32) == 0);
+	oBfrPtr += 32;
+
+	// Generating Software
+	Test(_cmp_LASsieStr("Some Generating Software", oBfrPtr, 32) == 0);
+	oBfrPtr += 32;
+
+	// Creation {Day,Year}
+	oBfrPtr[0] == 0x6E; // 0x016E == 366
+	oBfrPtr[1] == 0x01;
+	oBfrPtr[2] == 0xE0; // 0x07E0 == 2016
+	oBfrPtr[3] == 0x07;
+	oBfrPtr += 4;
+
+	// 
+
+	return 0;
+}
+
 
 // main()
 
@@ -370,6 +527,7 @@ int main(int argc, char **argv)
 	Test(TestLASsie() == 0);
 	Test(TestLASsieVarLenRec() == 0);
 	Test(TestLASsiePointDataRec() == 0);
+	Test(TestLASsieGenerate() == 0);
 	
 	printf("=== ALL TESTS PASSED ===\n");
 

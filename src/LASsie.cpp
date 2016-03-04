@@ -84,6 +84,51 @@ static const size_t lPointDataRecFmt1Size = lPointDataRecSizeBase + lPointDataRe
 static const size_t lPointDataRecFmt2Size = lPointDataRecSizeBase + lPointDataRecSizeExt2;
 static const size_t lPointDataRecFmt3Size = lPointDataRecSizeBase + lPointDataRecSizeExt3;
 
+static const size_t lPointDataRecSizes[4] =
+{
+	lPointDataRecFmt0Size,
+	lPointDataRecFmt1Size,
+	lPointDataRecFmt2Size,
+	lPointDataRecFmt3Size
+};
+
+
+static inline bool _local_IsLe()
+{
+	static const union { modri::uint16 uVal; modri::uint8 uByte[2]; } oUni = { 0xFEDC };
+	return (oUni.uByte[0] == 0xDC);
+}
+
+template <class tType>
+static inline void _local_WriteLe(modri::uint8 *nBfr, tType nVal) // nBfr needs to have at least as much space as sizeof(nVal)
+{
+	if (_local_IsLe() == true)
+		memcpy(nBfr, &nVal, sizeof(nVal));
+	else
+	{
+		for (size_t i = sizeof(nVal); i != 0;)
+			nBfr[sizeof(nVal) - i] = reinterpret_cast<modri::uint8 *>(&nVal)[--i]; // NOTE: i is decreased here
+	}
+}
+
+template <class tType>
+static inline void _local_WriteLeAdv(modri::uint8 *&nBfr, tType nVal) // NOTE: This function will advance nBfr pointer for sizeof(nVal) bytes
+{
+	_local_WriteLe(nBfr, nVal);
+	nBfr += sizeof(tType);
+}
+
+static inline void _local_MemcpyAdv(modri::uint8 *&nBfr, const void *nSrc, size_t nSrcSize) // NOTE: This function will advance nBfr pointer for sizeof(nVal) bytes
+{
+	memcpy(nBfr, nSrc, nSrcSize);
+	nBfr += nSrcSize;
+}
+
+static inline void _local_WriteDoubleAdv(modri::uint8 *&nBfr, double nVal)
+{
+	_local_MemcpyAdv(nBfr, &nVal, sizeof(nVal));
+}
+
 
 // 
 // LASsie
@@ -104,11 +149,81 @@ void modri::LASsie::Reset()
 	memset(&this->mMin, 0, sizeof(this->mMin));
 
 	this->mRecProvider = NULL;
+	this->mInout = NULL;
+	
+	this->mLastError = LASsie::leNone;
 }
 
 void modri::LASsie::SetGuid(const LASsie::Guid &nGuid)
 {
 	memcpy(&this->mGuid, &nGuid, sizeof(this->mGuid));
+}
+
+bool modri::LASsie::Generate()
+{
+	if (this->mInout == NULL)
+		return false;
+
+	modri::uint8 oPubHeader[lPublicHeaderSize];
+	modri::uint8 *oCurPos = oPubHeader;
+
+	// File signature
+	oPubHeader[0] = 'L';
+	oPubHeader[1] = 'A';
+	oPubHeader[2] = 'S';
+	oPubHeader[3] = 'F';
+	oCurPos += 4;
+
+	_local_WriteLeAdv(oCurPos, this->mFileSrcId); // File Source ID
+	_local_WriteLeAdv(oCurPos, static_cast<modri::uint16>(((this->mGlobalEnc == true) ? 0x0001 : 0x0000))); // Global Encoding
+	_local_WriteLeAdv(oCurPos, this->mGuid.sD1);  // GUID data 1
+	_local_WriteLeAdv(oCurPos, this->mGuid.sD2);  // GUID data 2
+	_local_WriteLeAdv(oCurPos, this->mGuid.sD3);  // GUID data 3
+	_local_MemcpyAdv(oCurPos, this->mGuid.sD4, sizeof(this->mGuid.sD4));   // GUID data 4
+	*oCurPos++ = 1; // (LASF) Version Major
+	*oCurPos++ = 2; // (LASF) Version Minor
+	_local_MemcpyAdv(oCurPos, lSystemIdentifier, (sizeof(lSystemIdentifier) - 1)); // System Identifier
+	memcpy(oCurPos, this->mGenerSw.Get(), 32); // Generating Software
+	oCurPos += 32;
+	_local_WriteLeAdv(oCurPos, this->mCreatDay);     // File Creation Day of Year
+	_local_WriteLeAdv(oCurPos, this->mCreatYear);    // File Creation Year
+	_local_WriteLeAdv(oCurPos, static_cast<modri::uint16>(lPublicHeaderSize)); // Header Size
+
+	// WARNING: SET THESE!!!
+	_local_WriteLeAdv(oCurPos, static_cast<modri::uint32>(0xA5A55A5A)); // Offset to point data
+	_local_WriteLeAdv(oCurPos, static_cast<modri::uint32>(0xF00F0FF0)); // Number of Variable Length Records 
+
+	*oCurPos++ = static_cast<modri::uint8>(this->mPdrf); // Point Data Format ID
+	_local_WriteLeAdv(oCurPos, static_cast<modri::uint16>(lPointDataRecSizes[static_cast<modri::uint8>(this->mPdrf)]));
+
+	// WARNING: SET THESE!!!
+	_local_WriteLeAdv(oCurPos, static_cast<modri::uint32>(0x01234567)); // Number of point records 
+	_local_WriteLeAdv(oCurPos, static_cast<modri::uint32>(0xF0000001)); // Number of points by return [0]
+	_local_WriteLeAdv(oCurPos, static_cast<modri::uint32>(0xE0000002)); // Number of points by return [1]
+	_local_WriteLeAdv(oCurPos, static_cast<modri::uint32>(0xD0000003)); // Number of points by return [2]
+	_local_WriteLeAdv(oCurPos, static_cast<modri::uint32>(0xC0000004)); // Number of points by return [3]
+	_local_WriteLeAdv(oCurPos, static_cast<modri::uint32>(0xB0000005)); // Number of points by return [4]
+
+	_local_WriteDoubleAdv(oCurPos, this->mScale.sX);
+	_local_WriteDoubleAdv(oCurPos, this->mScale.sY);
+	_local_WriteDoubleAdv(oCurPos, this->mScale.sZ);
+	_local_WriteDoubleAdv(oCurPos, this->mOffset.sX);
+	_local_WriteDoubleAdv(oCurPos, this->mOffset.sY);
+	_local_WriteDoubleAdv(oCurPos, this->mOffset.sZ);
+	_local_WriteDoubleAdv(oCurPos, this->mMax.sX);
+	_local_WriteDoubleAdv(oCurPos, this->mMin.sX);
+	_local_WriteDoubleAdv(oCurPos, this->mMax.sY);
+	_local_WriteDoubleAdv(oCurPos, this->mMin.sY);
+	_local_WriteDoubleAdv(oCurPos, this->mMax.sZ);
+	_local_WriteDoubleAdv(oCurPos, this->mMin.sZ);
+
+	// Write Public Header Block
+	if (this->mInout->Write(oPubHeader, sizeof(oPubHeader)) != true)
+		return false;
+
+	// TODO: Write VarLenRecs and PointDataRecs
+
+	return true;
 }
 
 

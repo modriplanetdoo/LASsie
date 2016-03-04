@@ -50,59 +50,16 @@ void modri::LASsie::PointDataRec::Reset()
 {
 	memset(&this->mCoord, 0, sizeof(this->mCoord));
 	this->mInten = 0;
-	this->mScanFields = 0;
+	this->mRetNum = 0;
+	this->mRetTotal = 0;
+	this->mScanDirFlag = false;
+	this->mFlightEdge = false;
 	this->mClassif = 0;
 	this->mScanAngle = 0;
 	this->mUserData = 0;
 	this->mPointSrcId = 0;
 	this->mGpsTime = 0.0;
 	memset(&this->mColor, 0, sizeof(this->mColor));
-}
-
-modri::uint8 modri::LASsie::PointDataRec::GetRetNum() const
-{
-	return (this->mScanFields & 0x07);
-}
-
-void modri::LASsie::PointDataRec::SetRetNum(modri::uint8 nRetNum)
-{
-	this->mScanFields = ((this->mScanFields & ~0x07) | (nRetNum & 0x07));
-}
-
-modri::uint8 modri::LASsie::PointDataRec::GetRetTotal() const
-{
-	return ((this->mScanFields >> 3) & 0x07);
-}
-
-void modri::LASsie::PointDataRec::SetRetTotal(modri::uint8 nRetTotal)
-{
-	this->mScanFields = ((this->mScanFields & ~0x38) | ((nRetTotal & 0x07) << 3));
-}
-
-bool modri::LASsie::PointDataRec::HasScanDirFlag() const
-{
-	return ((this->mScanFields & 0x40) != 0);
-}
-
-void modri::LASsie::PointDataRec::SetScanDirFlag(bool nScanDirFlag)
-{
-	if (nScanDirFlag == true)
-		this->mScanFields |= 0x40;
-	else
-		this->mScanFields &= ~0x40;
-}
-
-bool modri::LASsie::PointDataRec::IsFlightEdge() const
-{
-	return ((this->mScanFields & 0x80) != 0);
-}
-
-void modri::LASsie::PointDataRec::SetFlightEdge(bool nFlightEdge)
-{
-	if (nFlightEdge == true)
-		this->mScanFields |= 0x80;
-	else
-		this->mScanFields &= ~0x80;
 }
 
 

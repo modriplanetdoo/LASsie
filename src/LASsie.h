@@ -99,7 +99,10 @@ namespace modri
 				private:
 					PointDataRec::CoordType mCoord;
 					modri::uint16 mInten;
-					modri::uint8 mScanFields; // Return Number (0..2), Number of Returns (3..5), Scan Direction Flag(6), and Edge of Flight Line(7)
+					modri::uint8 mRetNum;
+					modri::uint8 mRetTotal;
+					bool mScanDirFlag;
+					bool mFlightEdge;
 					modri::uint8 mClassif;
 					modri::uint8 mScanAngle;
 					modri::uint8 mUserData;
@@ -117,14 +120,14 @@ namespace modri
 					inline void SetCoord(modri::sint32 nX, modri::sint32 nY, modri::sint32 nZ) { this->mCoord.sX = nX; this->mCoord.sY = nY; this->mCoord.sZ = nZ; }
 					inline modri::uint16 GetInten() const { return this->mInten; }
 					inline void SetInten(modri::uint16 nInten) { this->mInten = nInten; }
-					modri::uint8 GetRetNum() const;
-					void SetRetNum(modri::uint8 nRetNum);
-					modri::uint8 GetRetTotal() const;
-					void SetRetTotal(modri::uint8 nRetTotal);
-					bool HasScanDirFlag() const;
-					void SetScanDirFlag(bool nScanDirFlag);
-					bool IsFlightEdge() const;
-					void SetFlightEdge(bool nFlightEdge);
+					inline modri::uint8 GetRetNum() const { return this->mRetNum; }
+					inline void SetRetNum(modri::uint8 nRetNum) { this->mRetNum = ((nRetNum <= 5) ? nRetNum : 0); }
+					inline modri::uint8 GetRetTotal() const { return this->mRetTotal; }
+					inline void SetRetTotal(modri::uint8 nRetTotal) { this->mRetTotal = ((nRetTotal <= 5) ? nRetTotal : 0); }
+					inline bool HasScanDirFlag() const { return this->mScanDirFlag; }
+					inline void SetScanDirFlag(bool nScanDirFlag) { this->mScanDirFlag = nScanDirFlag; }
+					inline bool IsFlightEdge() const { return this->mFlightEdge; }
+					inline void SetFlightEdge(bool nFlightEdge) { this->mFlightEdge = nFlightEdge; }
 					inline modri::uint8 GetClassif() const { return this->mClassif; }
 					inline void SetClassif(modri::uint8 nClassif) { this->mClassif = nClassif; }
 					inline modri::uint8 GetScanAngle() const { return this->mScanAngle; }

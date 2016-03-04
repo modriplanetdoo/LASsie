@@ -366,8 +366,6 @@ static int TestLASsiePointDataRec()
 
 int main(int argc, char **argv)
 {
-	modri::LASsie::String<32> oStr;
-
 	Test(TestLASsieString() == 0);
 	Test(TestLASsie() == 0);
 	Test(TestLASsieVarLenRec() == 0);

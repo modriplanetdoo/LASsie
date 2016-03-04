@@ -145,6 +145,26 @@ namespace modri
 					inline void SetColor(modri::uint16 nR, modri::uint16 nG, modri::uint16 nB) { this->mColor.sR = nR; this->mColor.sG = nG; this->mColor.sB = nB; }
 			};
 
+			class RecProviderIface
+			{
+				public:
+					virtual size_t GetVarLenRecCount() const = 0;
+					virtual bool FillVarLenRec(size_t nIdx, LASsie::VarLenRec &nVlr) const = 0;
+					virtual void *GetVarLenRecData(size_t nIdx, size_t &nSize) const = 0;
+					virtual size_t GetPointDataRecCount() const = 0;
+					virtual size_t GetPointDataRecCountByRet(size_t nRet) const = 0;
+					virtual bool FillPointDataRec(size_t nIdx, LASsie::PointDataRec &nPdr) const = 0;
+			};
+
+			// class RecProcessorIface to be added for processing parsed records
+
+			class InoutIface
+			{
+				public:
+					virtual bool Read(void *nBfr, size_t nBfrSize, size_t &nReadSize) const = 0;
+					virtual bool Write(const void *nData, size_t nDataSize) const = 0;
+			};
+
 		private:
 			modri::uint16 mFileSrcId;
 			bool mGlobalEnc;
@@ -157,6 +177,9 @@ namespace modri
 			LASsie::OffsetType mOffset;
 			LASsie::CoordEdgeType mMax;
 			LASsie::CoordEdgeType mMin;
+
+			const LASsie::RecProviderIface *mRecProvider;
+			const LASsie::InoutIface *mInout;
 
 		public:
 			inline LASsie() { this->Reset(); }
@@ -185,6 +208,9 @@ namespace modri
 			inline void SetMax(double nX, double nY, double nZ) { this->mMax.sX = nX; this->mMax.sY = nY; this->mMax.sZ = nZ; }
 			inline const LASsie::CoordEdgeType &GetMin() const { return this->mMin; }
 			inline void SetMin(double nX, double nY, double nZ) { this->mMin.sX = nX; this->mMin.sY = nY; this->mMin.sZ = nZ; }
+
+			inline void SetRecProvider(const LASsie::RecProviderIface *nRecProvider) { this->mRecProvider = nRecProvider; }
+			inline void SetInout(const LASsie::InoutIface *nInout) { this->mInout = nInout; }
 		};
 }
 

@@ -94,7 +94,8 @@ namespace modri
 
 			class PointDataRec
 			{
-				typedef LASsie::Coord<modri::sint32> CoordType;
+				public:
+					typedef LASsie::Coord<modri::sint32> CoordType;
 
 				private:
 					PointDataRec::CoordType mCoord;
@@ -104,7 +105,7 @@ namespace modri
 					bool mScanDirFlag;
 					bool mFlightEdge;
 					modri::uint8 mClassif;
-					modri::uint8 mScanAngle;
+					modri::sint8 mScanAngle;
 					modri::uint8 mUserData;
 					modri::uint16 mPointSrcId;
 					double mGpsTime;
@@ -117,6 +118,7 @@ namespace modri
 					void Reset();
 
 					inline const PointDataRec::CoordType &GetCoord() const { return this->mCoord; }
+					inline PointDataRec::CoordType GetCoord() { return this->mCoord; }
 					inline void SetCoord(modri::sint32 nX, modri::sint32 nY, modri::sint32 nZ) { this->mCoord.sX = nX; this->mCoord.sY = nY; this->mCoord.sZ = nZ; }
 					inline modri::uint16 GetInten() const { return this->mInten; }
 					inline void SetInten(modri::uint16 nInten) { this->mInten = nInten; }
@@ -124,22 +126,23 @@ namespace modri
 					inline void SetRetNum(modri::uint8 nRetNum) { this->mRetNum = ((nRetNum <= 5) ? nRetNum : 0); }
 					inline modri::uint8 GetRetTotal() const { return this->mRetTotal; }
 					inline void SetRetTotal(modri::uint8 nRetTotal) { this->mRetTotal = ((nRetTotal <= 5) ? nRetTotal : 0); }
-					inline bool HasScanDirFlag() const { return this->mScanDirFlag; }
+					inline bool GetScanDirFlag() const { return this->mScanDirFlag; }
 					inline void SetScanDirFlag(bool nScanDirFlag) { this->mScanDirFlag = nScanDirFlag; }
 					inline bool IsFlightEdge() const { return this->mFlightEdge; }
 					inline void SetFlightEdge(bool nFlightEdge) { this->mFlightEdge = nFlightEdge; }
 					inline modri::uint8 GetClassif() const { return this->mClassif; }
 					inline void SetClassif(modri::uint8 nClassif) { this->mClassif = nClassif; }
-					inline modri::uint8 GetScanAngle() const { return this->mScanAngle; }
-					inline void SetScanAngle(modri::uint8 nScanAngle) { this->mScanAngle = nScanAngle; }
+					inline modri::sint8 GetScanAngle() const { return this->mScanAngle; }
+					inline void SetScanAngle(modri::sint8 nScanAngle) { this->mScanAngle = ((nScanAngle >= -90 && nScanAngle <= 90) ? nScanAngle : 0); }
 					inline modri::uint8 GetUserData() const { return this->mUserData; }
 					inline void SetUserData(modri::uint8 nUserData) { this->mUserData = nUserData; }
-					inline modri::uint16 GetPointSrcId() const { this->mPointSrcId; }
+					inline modri::uint16 GetPointSrcId() const { return this->mPointSrcId; }
 					inline void SetPointSrcId(modri::uint16 nPointSrcId) { this->mPointSrcId = nPointSrcId; }
 					inline double GetGpsTime() const { return this->mGpsTime; }
 					inline void SetGpsTime(double nGpsTime) { this->mGpsTime = nGpsTime; }
 					inline const LASsie::Color &GetColor() const { return this->mColor; }
 					inline LASsie::Color &GetColor() { return this->mColor; }
+					inline void SetColor(modri::uint16 nR, modri::uint16 nG, modri::uint16 nB) { this->mColor.sR = nR; this->mColor.sG = nG; this->mColor.sB = nB; }
 			};
 
 		private:

@@ -43,6 +43,14 @@ int _cmp_LASsieCoord(const modri::LASsie::Coord<tType> &nCoord1, const modri::LA
 	return 0;
 }
 
+int _cmp_LASsieColor(const modri::LASsie::Color &nColor1, const modri::LASsie::Color &nColor2)
+{
+	Test(nColor1.sR == nColor2.sR);
+	Test(nColor1.sG == nColor2.sG);
+	Test(nColor1.sB == nColor2.sB);
+	return 0;
+}
+
 template <size_t tSize>
 int _cmp_LASsieStr(const modri::LASsie::String<tSize> &nLStr, const char *nStr)
 {
@@ -264,6 +272,95 @@ static int TestLASsieVarLenRec()
 	return 0;
 }
 
+static int TestLASsiePointDataRec()
+{
+	PrintFn();
+
+	modri::LASsie::PointDataRec oPdr;
+	modri::LASsie::PointDataRec::CoordType oCoordVolatile;
+	modri::LASsie::Color oColorVolatile;
+
+
+	// Init
+
+	memset(&oCoordVolatile, 0, sizeof(oCoordVolatile));
+	memset(&oColorVolatile, 0, sizeof(oColorVolatile));
+
+	Test(_cmp_LASsieCoord(oPdr.GetCoord(), oCoordVolatile) == 0);
+	Test(oPdr.GetInten() == 0);
+	Test(oPdr.GetRetNum() == 0);
+	Test(oPdr.GetRetTotal() == 0);
+	Test(oPdr.GetScanDirFlag() == false);
+	Test(oPdr.IsFlightEdge() == false);
+	Test(oPdr.GetClassif() == 0);
+	Test(oPdr.GetScanAngle() == 0);
+	Test(oPdr.GetUserData() == 0);
+	Test(oPdr.GetPointSrcId() == 0);
+	Test(oPdr.GetGpsTime() == 0.0);
+	Test(_cmp_LASsieColor(oPdr.GetColor(), oColorVolatile) == 0);
+
+
+	// {G,S}etters
+
+	oPdr.SetCoord(0xFEDC, 0xBA98, 0x7654);
+	oCoordVolatile.sX = 0xFEDC;
+	oCoordVolatile.sY = 0xBA98;
+	oCoordVolatile.sZ = 0x7654;
+	Test(_cmp_LASsieCoord(oPdr.GetCoord(), oCoordVolatile) == 0);
+
+	oPdr.SetInten(0xF0A5);
+	Test(oPdr.GetInten() == 0xF0A5);
+
+	oPdr.SetRetNum(5);
+	Test(oPdr.GetRetNum() == 5);
+	oPdr.SetRetNum(6); // more than the value 5 not allowed
+	Test(oPdr.GetRetNum() == 0);
+
+	oPdr.SetRetTotal(5);
+	Test(oPdr.GetRetTotal() == 5);
+	oPdr.SetRetTotal(6); // more than the value 5 not allowed
+	Test(oPdr.GetRetTotal() == 0);
+
+	oPdr.SetScanDirFlag(true);
+	Test(oPdr.GetScanDirFlag() == true);
+	oPdr.SetScanDirFlag(false);
+	Test(oPdr.GetScanDirFlag() == false);
+
+	oPdr.SetFlightEdge(true);
+	Test(oPdr.IsFlightEdge() == true);
+	oPdr.SetFlightEdge(false);
+	Test(oPdr.IsFlightEdge() == false);
+
+	oPdr.SetClassif(0xA5);
+	Test(oPdr.GetClassif() == 0xA5);
+
+	oPdr.SetScanAngle(90);
+	Test(oPdr.GetScanAngle() == 90);
+	oPdr.SetScanAngle(91); // value over 90 (degrees) not allowed
+	Test(oPdr.GetScanAngle() == 0);
+	oPdr.SetScanAngle(-90);
+	Test(oPdr.GetScanAngle() == -90);
+	oPdr.SetScanAngle(-91); // value under -90 (degrees) not allowed
+	Test(oPdr.GetScanAngle() == 0);
+
+	oPdr.SetUserData(0xBB);
+	Test(oPdr.GetUserData() == 0xBB);
+
+	oPdr.SetPointSrcId(0xA55A);
+	Test(oPdr.GetPointSrcId() == 0xA55A);
+
+	oPdr.SetGpsTime(12345.6789);
+	Test(oPdr.GetGpsTime() == 12345.6789);
+
+	oPdr.SetColor(0xF1, 0xE2, 0xD3);
+	oColorVolatile.sR = 0xF1;
+	oColorVolatile.sG = 0xE2;
+	oColorVolatile.sB = 0xD3;
+	Test(_cmp_LASsieColor(oPdr.GetColor(), oColorVolatile) == 0);
+
+	return 0;
+}
+
 
 // main()
 
@@ -274,6 +371,7 @@ int main(int argc, char **argv)
 	Test(TestLASsieString() == 0);
 	Test(TestLASsie() == 0);
 	Test(TestLASsieVarLenRec() == 0);
+	Test(TestLASsiePointDataRec() == 0);
 	
 	printf("=== ALL TESTS PASSED ===\n");
 

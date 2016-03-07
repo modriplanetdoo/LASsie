@@ -247,6 +247,7 @@ bool modri::LASsie::Generate()
 
 
 	// VLR values
+
 	modri::uint32 oGeoKeyDataSize = 
 		static_cast<modri::uint32>(lGeoKeysHeaderSize) +
 		static_cast<modri::uint32>(this->mGeoKeys.size() * lGeoKeysEntrySize);
@@ -260,7 +261,9 @@ bool modri::LASsie::Generate()
 	{
 		oVlrCount += static_cast<modri::uint32>(this->mRecProvider->GetVarLenRecCount());
 		for (size_t i = (oVlrCount - 1); i-- != 0;)
-			oPdOffset += static_cast<modri::uint32>(this->mRecProvider->GetVarLenRecDataSize(i));
+			oPdOffset += 
+				static_cast<modri::uint32>(lVarLenRecHeaderSize) +
+				static_cast<modri::uint32>(this->mRecProvider->GetVarLenRecDataSize(i));
 	}
 
 	_local_WriteLeAdv(oCurPos, oPdOffset); // Offset to point data
@@ -270,13 +273,45 @@ bool modri::LASsie::Generate()
 	*oCurPos++ = static_cast<modri::uint8>(this->mPdrFormat); // Point Data Format ID
 	_local_WriteLeAdv(oCurPos, static_cast<modri::uint16>(lPointDataRecSizes[static_cast<modri::uint8>(this->mPdrFormat)]));
 
-	// WARNING: SET THESE!!!
-	_local_WriteLeAdv(oCurPos, static_cast<modri::uint32>(0x01234567)); // Number of point records 
-	_local_WriteLeAdv(oCurPos, static_cast<modri::uint32>(0xF0000001)); // Number of points by return [0]
-	_local_WriteLeAdv(oCurPos, static_cast<modri::uint32>(0xE0000002)); // Number of points by return [1]
-	_local_WriteLeAdv(oCurPos, static_cast<modri::uint32>(0xD0000003)); // Number of points by return [2]
-	_local_WriteLeAdv(oCurPos, static_cast<modri::uint32>(0xC0000004)); // Number of points by return [3]
-	_local_WriteLeAdv(oCurPos, static_cast<modri::uint32>(0xB0000005)); // Number of points by return [4]
+
+	// PDR values
+
+	size_t oPdrCount = 0; // values will be checked later
+	size_t oPdrCountByRet[5]; // values will be checked later
+	oPdrCountByRet[0] = 0;
+	oPdrCountByRet[1] = 0;
+	oPdrCountByRet[2] = 0;
+	oPdrCountByRet[3] = 0;
+	oPdrCountByRet[4] = 0;
+
+	if (this->mRecProvider != NULL)
+	{
+		oPdrCount = this->mRecProvider->GetPointDataRecCount();
+		oPdrCountByRet[0] = this->mRecProvider->GetPointDataRecCountByRet(0);
+		oPdrCountByRet[1] = this->mRecProvider->GetPointDataRecCountByRet(1);
+		oPdrCountByRet[2] = this->mRecProvider->GetPointDataRecCountByRet(2);
+		oPdrCountByRet[3] = this->mRecProvider->GetPointDataRecCountByRet(3);
+		oPdrCountByRet[4] = this->mRecProvider->GetPointDataRecCountByRet(4);
+
+		if (oPdrCount > 0xFFFFFFFF ||
+			oPdrCountByRet[0] > 0xFFFFFFFF ||
+			oPdrCountByRet[1] > 0xFFFFFFFF ||
+			oPdrCountByRet[2] > 0xFFFFFFFF ||
+			oPdrCountByRet[3] > 0xFFFFFFFF ||
+			oPdrCountByRet[4] > 0xFFFFFFFF)
+		{
+			this->mLastError = LASsie::lePdrCount;
+			return false;
+		}
+	}
+
+	_local_WriteLeAdv(oCurPos, static_cast<modri::uint32>(oPdrCount)); // Number of point records 
+	_local_WriteLeAdv(oCurPos, static_cast<modri::uint32>(oPdrCountByRet[0])); // Number of points by return [0]
+	_local_WriteLeAdv(oCurPos, static_cast<modri::uint32>(oPdrCountByRet[1])); // Number of points by return [1]
+	_local_WriteLeAdv(oCurPos, static_cast<modri::uint32>(oPdrCountByRet[2])); // Number of points by return [2]
+	_local_WriteLeAdv(oCurPos, static_cast<modri::uint32>(oPdrCountByRet[3])); // Number of points by return [3]
+	_local_WriteLeAdv(oCurPos, static_cast<modri::uint32>(oPdrCountByRet[4])); // Number of points by return [4]
+
 
 	_local_WriteDoubleAdv(oCurPos, this->mScale.sX);
 	_local_WriteDoubleAdv(oCurPos, this->mScale.sY);
@@ -338,6 +373,11 @@ bool modri::LASsie::Generate()
 	}
 
 	
+	// Nothing else to do as record provider does not exist
+	if (this->mRecProvider == NULL)
+		return true;
+
+
 	// TODO: Write VarLenRecs and PointDataRecs
 
 

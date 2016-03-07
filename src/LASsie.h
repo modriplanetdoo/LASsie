@@ -200,7 +200,8 @@ namespace modri
 				leNoInoutIface,
 				leWriteFail,
 				leReadFail,
-				leGeoKeysSize
+				leGeoKeysSize,
+				lePdrCount
 			};
 
 		private:

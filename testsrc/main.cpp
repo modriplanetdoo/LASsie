@@ -594,37 +594,37 @@ static int TestLASsieGenerate()
 	oBfrPtr += 2;
 
 	// Number of point records; WARNING: These are only testing placeholder values
-	Test(oBfrPtr[0] == 0x67);
-	Test(oBfrPtr[1] == 0x45);
-	Test(oBfrPtr[2] == 0x23);
-	Test(oBfrPtr[3] == 0x01);
+	Test(oBfrPtr[0] == 0x00);
+	Test(oBfrPtr[1] == 0x00);
+	Test(oBfrPtr[2] == 0x00);
+	Test(oBfrPtr[3] == 0x00);
 	oBfrPtr += 4;
 
 	// Number of points by return; WARNING: These are only testing placeholder values
-	Test(oBfrPtr[0] == 0x01);
+	Test(oBfrPtr[0] == 0x00);
 	Test(oBfrPtr[1] == 0x00);
 	Test(oBfrPtr[2] == 0x00);
-	Test(oBfrPtr[3] == 0xF0);
+	Test(oBfrPtr[3] == 0x00);
 	oBfrPtr += 4;
-	Test(oBfrPtr[0] == 0x02);
+	Test(oBfrPtr[0] == 0x00);
 	Test(oBfrPtr[1] == 0x00);
 	Test(oBfrPtr[2] == 0x00);
-	Test(oBfrPtr[3] == 0xE0);
+	Test(oBfrPtr[3] == 0x00);
 	oBfrPtr += 4;
-	Test(oBfrPtr[0] == 0x03);
+	Test(oBfrPtr[0] == 0x00);
 	Test(oBfrPtr[1] == 0x00);
 	Test(oBfrPtr[2] == 0x00);
-	Test(oBfrPtr[3] == 0xD0);
+	Test(oBfrPtr[3] == 0x00);
 	oBfrPtr += 4;
-	Test(oBfrPtr[0] == 0x04);
+	Test(oBfrPtr[0] == 0x00);
 	Test(oBfrPtr[1] == 0x00);
 	Test(oBfrPtr[2] == 0x00);
-	Test(oBfrPtr[3] == 0xC0);
+	Test(oBfrPtr[3] == 0x00);
 	oBfrPtr += 4;
-	Test(oBfrPtr[0] == 0x05);
+	Test(oBfrPtr[0] == 0x00);
 	Test(oBfrPtr[1] == 0x00);
 	Test(oBfrPtr[2] == 0x00);
-	Test(oBfrPtr[3] == 0xB0);
+	Test(oBfrPtr[3] == 0x00);
 	oBfrPtr += 4;
 
 	// {X,Y,Z} scale factor

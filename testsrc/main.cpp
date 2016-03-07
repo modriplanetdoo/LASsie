@@ -108,6 +108,13 @@ int _cmp_LASsieStr(const char *nStr, const modri::uint8 *nBfrPtr, size_t nBfrSiz
 	return 0;
 }
 
+int _cmp_BfrDoubleAdv(const modri::uint8 *&nBfr, double nVal)
+{
+	Test(*reinterpret_cast<const double *>(nBfr) == nVal);
+	nBfr += sizeof(double);
+	return 0;
+}
+
 
 // Test functions
 
@@ -507,13 +514,90 @@ static int TestLASsieGenerate()
 	oBfrPtr += 32;
 
 	// Creation {Day,Year}
-	oBfrPtr[0] == 0x6E; // 0x016E == 366
-	oBfrPtr[1] == 0x01;
-	oBfrPtr[2] == 0xE0; // 0x07E0 == 2016
-	oBfrPtr[3] == 0x07;
+	Test(oBfrPtr[0] == 0x6E); // 0x016E == 366
+	Test(oBfrPtr[1] == 0x01);
+	Test(oBfrPtr[2] == 0xE0); // 0x07E0 == 2016
+	Test(oBfrPtr[3] == 0x07);
 	oBfrPtr += 4;
 
-	// 
+	// Header Size
+	Test(oBfrPtr[0] == 0xE3); // 0xE3 == 227
+	Test(oBfrPtr[1] == 0x00);
+	oBfrPtr += 2;
+
+	// Offset Point Data; WARNING: These are only testing placeholder values
+	Test(oBfrPtr[0] == 0x5A);
+	Test(oBfrPtr[1] == 0x5A);
+	Test(oBfrPtr[2] == 0xA5);
+	Test(oBfrPtr[3] == 0xA5);
+	oBfrPtr += 4;
+
+	// Number of Variable Length Records; WARNING: These are only testing placeholder values
+	Test(oBfrPtr[0] == 0xF0);
+	Test(oBfrPtr[1] == 0x0F);
+	Test(oBfrPtr[2] == 0x0F);
+	Test(oBfrPtr[3] == 0xF0);
+	oBfrPtr += 4;
+
+	// Point Data Format ID
+	Test(*oBfrPtr++ == 0x03); // Format 3
+
+	// Point Data Record Length
+	Test(oBfrPtr[0] == 0x22); // 0x22 == 34
+	Test(oBfrPtr[1] == 0x00);
+	oBfrPtr += 2;
+
+	// Number of point records; WARNING: These are only testing placeholder values
+	Test(oBfrPtr[0] == 0x67);
+	Test(oBfrPtr[1] == 0x45);
+	Test(oBfrPtr[2] == 0x23);
+	Test(oBfrPtr[3] == 0x01);
+	oBfrPtr += 4;
+
+	// Number of points by return; WARNING: These are only testing placeholder values
+	Test(oBfrPtr[0] == 0x01);
+	Test(oBfrPtr[1] == 0x00);
+	Test(oBfrPtr[2] == 0x00);
+	Test(oBfrPtr[3] == 0xF0);
+	oBfrPtr += 4;
+	Test(oBfrPtr[0] == 0x02);
+	Test(oBfrPtr[1] == 0x00);
+	Test(oBfrPtr[2] == 0x00);
+	Test(oBfrPtr[3] == 0xE0);
+	oBfrPtr += 4;
+	Test(oBfrPtr[0] == 0x03);
+	Test(oBfrPtr[1] == 0x00);
+	Test(oBfrPtr[2] == 0x00);
+	Test(oBfrPtr[3] == 0xD0);
+	oBfrPtr += 4;
+	Test(oBfrPtr[0] == 0x04);
+	Test(oBfrPtr[1] == 0x00);
+	Test(oBfrPtr[2] == 0x00);
+	Test(oBfrPtr[3] == 0xC0);
+	oBfrPtr += 4;
+	Test(oBfrPtr[0] == 0x05);
+	Test(oBfrPtr[1] == 0x00);
+	Test(oBfrPtr[2] == 0x00);
+	Test(oBfrPtr[3] == 0xB0);
+	oBfrPtr += 4;
+
+	// {X,Y,Z} scale factor
+	Test(_cmp_BfrDoubleAdv(oBfrPtr, 1.1) == 0);
+	Test(_cmp_BfrDoubleAdv(oBfrPtr, 1.2) == 0);
+	Test(_cmp_BfrDoubleAdv(oBfrPtr, 1.3) == 0);
+
+	// {X,Y,Z} offset
+	Test(_cmp_BfrDoubleAdv(oBfrPtr, 2.1) == 0);
+	Test(_cmp_BfrDoubleAdv(oBfrPtr, 2.2) == 0);
+	Test(_cmp_BfrDoubleAdv(oBfrPtr, 2.3) == 0);
+
+	// {X,Y,Z} {Max,Min}
+	Test(_cmp_BfrDoubleAdv(oBfrPtr, 3.1) == 0);
+	Test(_cmp_BfrDoubleAdv(oBfrPtr, 4.1) == 0);
+	Test(_cmp_BfrDoubleAdv(oBfrPtr, 3.2) == 0);
+	Test(_cmp_BfrDoubleAdv(oBfrPtr, 4.2) == 0);
+	Test(_cmp_BfrDoubleAdv(oBfrPtr, 3.3) == 0);
+	Test(_cmp_BfrDoubleAdv(oBfrPtr, 4.3) == 0);
 
 	return 0;
 }

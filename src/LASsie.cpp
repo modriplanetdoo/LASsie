@@ -162,7 +162,10 @@ void modri::LASsie::SetGuid(const LASsie::Guid &nGuid)
 bool modri::LASsie::Generate()
 {
 	if (this->mInout == NULL)
+	{
+		this->mLastError = LASsie::leNoInoutIface;
 		return false;
+	}
 
 	modri::uint8 oPubHeader[lPublicHeaderSize];
 	modri::uint8 *oCurPos = oPubHeader;
@@ -219,11 +222,27 @@ bool modri::LASsie::Generate()
 
 	// Write Public Header Block
 	if (this->mInout->Write(oPubHeader, sizeof(oPubHeader)) != true)
+	{
+		this->mLastError = LASsie::leWriteFail;
 		return false;
+	}
 
 	// TODO: Write VarLenRecs and PointDataRecs
 
 	return true;
+}
+
+
+// 
+// LASsie::GeoKey
+// 
+
+void modri::LASsie::GeoKey::Reset()
+{
+	this->mKeyId = 0;
+	this->mTagLocat = 0;
+	this->mCount = 0;
+	this->mValOffset = 0;
 }
 
 

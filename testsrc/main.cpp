@@ -291,6 +291,38 @@ static int TestLASsie()
 	return 0;
 }
 
+static int TestLASsieGeoKey()
+{
+	PrintFn();
+
+	modri::LASsie::GeoKey oGk;
+
+
+	// Init
+
+	Test(oGk.GetKeyId() == 0);
+	Test(oGk.GetTagLocat() == 0);
+	Test(oGk.GetCount() == 0);
+	Test(oGk.GetValOffset() == 0);
+
+
+	// {G,S}etters
+
+	oGk.SetKeyId(0xFEDC);
+	Test(oGk.GetKeyId() == 0xFEDC);
+
+	oGk.SetTagLocat(0xBA98);
+	Test(oGk.GetTagLocat() == 0xBA98);
+
+	oGk.SetCount(0x7654);
+	Test(oGk.GetCount() == 0x7654);
+
+	oGk.SetValOffset(0x3210);
+	Test(oGk.GetValOffset() == 0x3210);
+
+	return 0;
+}
+
 static int TestLASsieVarLenRec()
 {
 	PrintFn();
@@ -609,6 +641,7 @@ int main(int argc, char **argv)
 {
 	Test(TestLASsieString() == 0);
 	Test(TestLASsie() == 0);
+	Test(TestLASsieGeoKey() == 0);
 	Test(TestLASsieVarLenRec() == 0);
 	Test(TestLASsiePointDataRec() == 0);
 	Test(TestLASsieGenerate() == 0);

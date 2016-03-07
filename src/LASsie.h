@@ -3,6 +3,8 @@
 
 #include "Types.h"
 
+#include <vector>
+
 namespace modri
 {
 	class LASsie
@@ -66,6 +68,31 @@ namespace modri
 			typedef LASsie::Coord<double> ScaleType;
 			typedef LASsie::Coord<double> OffsetType;
 			typedef LASsie::Coord<double> CoordEdgeType;
+
+			class GeoKey
+			{
+				private:
+					modri::uint16 mKeyId;
+					modri::uint16 mTagLocat;
+					modri::uint16 mCount;
+					modri::uint16 mValOffset;
+
+				public:
+					inline GeoKey() { this->Reset(); }
+					inline virtual ~GeoKey() { }
+
+					void Reset();
+
+					inline modri::uint16 GetKeyId() const { return this->mKeyId; }
+					inline void SetKeyId(modri::uint16 nKeyId) { this->mKeyId = nKeyId; }
+					inline modri::uint16 GetTagLocat() const { return this->mTagLocat; }
+					inline void SetTagLocat(modri::uint16 nTagLocat) { this->mTagLocat = nTagLocat; }
+					inline modri::uint16 GetCount() const { return this->mCount; }
+					inline void SetCount(modri::uint16 nCount) { this->mCount = nCount; }
+					inline modri::uint16 GetValOffset() const { return this->mValOffset; }
+					inline void SetValOffset(modri::uint16 nValOffset) { this->mValOffset = nValOffset; }
+			};
+			typedef std::vector<GeoKey> GeoKeyList;
 
 			class VarLenRec
 			{
@@ -149,10 +176,10 @@ namespace modri
 			{
 				public:
 					virtual size_t GetVarLenRecCount() const = 0;
-					virtual bool FillVarLenRec(size_t nIdx, LASsie::VarLenRec &nVlr) const = 0;
-					virtual void *GetVarLenRecData(size_t nIdx, size_t &nSize) const = 0;
+					virtual size_t GetVarLenRecDataSize(size_t nIdx) const = 0;
+					virtual bool FillVarLenRec(size_t nIdx, LASsie::VarLenRec &nVlr, const void *nData, size_t nDataSize) const = 0;
 					virtual size_t GetPointDataRecCount() const = 0;
-					virtual size_t GetPointDataRecCountByRet(size_t nRet) const = 0;
+					virtual size_t GetPointDataRecCountByRet(modri::uint8 nRet) const = 0;
 					virtual bool FillPointDataRec(size_t nIdx, LASsie::PointDataRec &nPdr) const = 0;
 			};
 
@@ -168,7 +195,11 @@ namespace modri
 			enum LastError
 			{
 				leNone,
-
+				leSysError,
+				leNotImplemeted,
+				leNoInoutIface,
+				leWriteFail,
+				leReadFail
 			};
 
 		private:
@@ -183,6 +214,8 @@ namespace modri
 			LASsie::OffsetType mOffset;
 			LASsie::CoordEdgeType mMax;
 			LASsie::CoordEdgeType mMin;
+
+			LASsie::GeoKeyList mGeoKeys;
 
 			const LASsie::RecProviderIface *mRecProvider;
 			LASsie::InoutIface *mInout;
@@ -216,6 +249,9 @@ namespace modri
 			inline void SetMax(double nX, double nY, double nZ) { this->mMax.sX = nX; this->mMax.sY = nY; this->mMax.sZ = nZ; }
 			inline const LASsie::CoordEdgeType &GetMin() const { return this->mMin; }
 			inline void SetMin(double nX, double nY, double nZ) { this->mMin.sX = nX; this->mMin.sY = nY; this->mMin.sZ = nZ; }
+
+			inline const LASsie::GeoKeyList &GetGeoKeys() const { return this->mGeoKeys; }
+			inline LASsie::GeoKeyList &GetGeoKeys() { return this->mGeoKeys; }
 
 			inline void SetRecProvider(const LASsie::RecProviderIface *nRecProvider) { this->mRecProvider = nRecProvider; }
 			inline void SetInout(LASsie::InoutIface *nInout) { this->mInout = nInout; }

@@ -18,6 +18,76 @@
 
 // Test helper classes
 
+class _local_RecProvider : public modri::LASsie::RecProviderIface
+{
+	public:
+		class Vlr : public modri::LASsie::VarLenRec
+		{
+			public:
+				typedef modri::LASsie::String<32> Str;
+
+			private:
+				Vlr::Str mStr;
+			
+			public:
+				const Vlr::Str &Data() const { return this->mStr; }
+				Vlr::Str &Data() { return this->mStr; }
+		};
+		typedef std::vector<_local_RecProvider::Vlr> VlrList;
+
+		class Pdr : public modri::LASsie::PointDataRec { };
+		typedef std::vector<_local_RecProvider::Pdr> PdrList;
+	
+	private:
+		_local_RecProvider::VlrList mVlrList;
+		_local_RecProvider::PdrList mPdrList;
+
+	public:
+		const _local_RecProvider::VlrList &GetVlrList() const { return this->mVlrList; }
+		_local_RecProvider::VlrList &GetVlrList() { return this->mVlrList; }
+		const _local_RecProvider::PdrList &GetPdrList() const { return this->mPdrList; }
+		_local_RecProvider::PdrList &GetPdrList() { return this->mPdrList; }
+		
+		virtual size_t GetVarLenRecCount() const { return this->mVlrList.size(); }
+		virtual size_t GetVarLenRecDataSize(size_t nIdx) const { return this->mVlrList.at(nIdx).Data().Len(); }
+		virtual bool FillVarLenRec(size_t nIdx, modri::LASsie::VarLenRec &nVlr, const void *nData, size_t nDataSize) const
+		{
+			if (nIdx >= this->mVlrList.size())
+				return false;
+
+			const _local_RecProvider::Vlr &oVlr = this->mVlrList.at(nIdx);
+			nVlr.UserId().Set(oVlr.UserId().Get());
+			nVlr.SetRecId(oVlr.GetRecId());
+			nVlr.Desc().Set(oVlr.Desc().Get());
+			nData = oVlr.Data().Get();
+			nDataSize = oVlr.Data().Len();
+			return true;
+		}
+
+		virtual size_t GetPointDataRecCount() const { return this->mPdrList.size(); }
+		virtual size_t GetPointDataRecCountByRet(modri::uint8 nRet) const { return ((nRet == 0) ? this->mPdrList.size() : 0); }
+		virtual bool FillPointDataRec(size_t nIdx, modri::LASsie::PointDataRec &nPdr) const
+		{
+			if (nIdx >= this->mPdrList.size())
+				return false;
+
+			const _local_RecProvider::Pdr &oPdr = this->mPdrList.at(nIdx);
+			nPdr.SetCoord(oPdr.GetCoord().sX, oPdr.GetCoord().sY, oPdr.GetCoord().sZ);
+			nPdr.SetInten(oPdr.GetInten());
+			nPdr.SetRetNum(oPdr.GetRetNum());
+			nPdr.SetRetTotal(oPdr.GetRetTotal());
+			nPdr.SetScanDirFlag(oPdr.GetScanDirFlag());
+			nPdr.SetFlightEdge(oPdr.IsFlightEdge());
+			nPdr.SetClassif(oPdr.GetClassif());
+			nPdr.SetScanAngle(oPdr.GetScanAngle());
+			nPdr.SetUserData(oPdr.GetUserData());
+			nPdr.SetPointSrcId(oPdr.GetPointSrcId());
+			nPdr.SetGpsTime(oPdr.GetGpsTime());
+			nPdr.SetColor(oPdr.GetColor().sR, oPdr.GetColor().sG, oPdr.GetColor().sB);
+			return true;
+		}
+};
+
 template <size_t tSize>
 class _local_Inout : public modri::LASsie::InoutIface
 {
@@ -445,6 +515,9 @@ static int TestLASsieGenerate()
 	modri::LASsie oLas;
 	modri::LASsie::Guid oGuid;
 	modri::LASsie::GeoKey oGeoKey;
+	_local_RecProvider::Vlr oVlr;
+	_local_RecProvider::Pdr oPdr;
+	_local_RecProvider oRecProv;
 	_local_Inout<304> oInoutTooSmall;
 	_local_Inout<305> oInout;
 	const modri::uint8 *oBfrPtr;
@@ -487,8 +560,56 @@ static int TestLASsieGenerate()
 	oGeoKey.SetValOffset(0x8008);
 	oLas.GetGeoKeys().push_back(oGeoKey);
 
+	oVlr.UserId().Set("User_VLR_1");
+	oVlr.SetRecId(0x3210);
+	oVlr.Desc().Set("User Variable Length Record 1");
+	oVlr.Data().Set("This is VLR string data"); // 23 bytes
+	oRecProv.GetVlrList().push_back(oVlr);
+
+	oVlr.UserId().Set("User_VLR_2");
+	oVlr.SetRecId(0x7654);
+	oVlr.Desc().Set("User Variable Length Record 2");
+	oVlr.Data().Set("This is another VLR string data"); // 31 bytes
+	oRecProv.GetVlrList().push_back(oVlr);
+
+	oVlr.UserId().Set("User_VLR_3");
+	oVlr.SetRecId(0xBA98);
+	oVlr.Desc().Set("User Variable Length Record 3");
+	oVlr.Data().Set("And another VLR string data"); // 27 bytes
+	oRecProv.GetVlrList().push_back(oVlr);
+
+	oPdr.SetCoord(0xF0E1, 0xD2B3, 0xA495);
+	oPdr.SetInten(0x8677);
+	oPdr.SetRetNum(6); // will fail, will correct later after fail check
+	oPdr.SetRetTotal(6); // will fail, will correct later after fail check
+	oPdr.SetScanDirFlag(true);
+	oPdr.SetFlightEdge(false);
+	oPdr.SetClassif(0xA5);
+	oPdr.SetScanAngle(-91); // will fail, will correct later after fail check
+	oPdr.SetUserData(0x5A);
+	oPdr.SetPointSrcId(0xFA50);
+	oPdr.SetGpsTime(12345.6789);
+	oPdr.SetColor(0xDC, 0x63, 0x34);
+	oRecProv.GetPdrList().push_back(oPdr);
+
+	oPdr.SetCoord(0x6859, 0x4A3B, 0x2C1D);
+	oPdr.SetInten(0x0E0F);
+	oPdr.SetRetNum(1);
+	oPdr.SetRetTotal(2);
+	oPdr.SetScanDirFlag(false);
+	oPdr.SetFlightEdge(true);
+	oPdr.SetClassif(0x5A);
+	oPdr.SetScanAngle(-15);
+	oPdr.SetUserData(0xA5);
+	oPdr.SetPointSrcId(0x05AF);
+	oPdr.SetGpsTime(98765.4321);
+	oPdr.SetColor(0x8C, 0x33, 0x2B);
+	oRecProv.GetPdrList().push_back(oPdr);
+
 
 	// Generating
+	
+	oLas.SetRecProvider(&oRecProv);
 
 	oLas.SetInout(&oInoutTooSmall);
 	Test(oLas.Generate() == false);
@@ -571,15 +692,15 @@ static int TestLASsieGenerate()
 	Test(oBfrPtr[1] == 0x00);
 	oBfrPtr += 2;
 
-	// Offset Point Data; WARNING: Correct these for the custom VLR sizes
-	Test(oBfrPtr[0] == 0x31);
-	Test(oBfrPtr[1] == 0x01);
+	// Offset Point Data
+	Test(oBfrPtr[0] == 0x24);
+	Test(oBfrPtr[1] == 0x02);
 	Test(oBfrPtr[2] == 0x00);
 	Test(oBfrPtr[3] == 0x00);
 	oBfrPtr += 4;
 
-	// Number of Variable Length Records; WARNING: Correct these for the custom VLR count
-	Test(oBfrPtr[0] == 0x01);
+	// Number of Variable Length Records
+	Test(oBfrPtr[0] == 0x04);
 	Test(oBfrPtr[1] == 0x00);
 	Test(oBfrPtr[2] == 0x00);
 	Test(oBfrPtr[3] == 0x00);
@@ -594,14 +715,14 @@ static int TestLASsieGenerate()
 	oBfrPtr += 2;
 
 	// Number of point records; WARNING: These are only testing placeholder values
-	Test(oBfrPtr[0] == 0x00);
+	Test(oBfrPtr[0] == 0x02);
 	Test(oBfrPtr[1] == 0x00);
 	Test(oBfrPtr[2] == 0x00);
 	Test(oBfrPtr[3] == 0x00);
 	oBfrPtr += 4;
 
 	// Number of points by return; WARNING: These are only testing placeholder values
-	Test(oBfrPtr[0] == 0x00);
+	Test(oBfrPtr[0] == 0x02);
 	Test(oBfrPtr[1] == 0x00);
 	Test(oBfrPtr[2] == 0x00);
 	Test(oBfrPtr[3] == 0x00);

@@ -1,6 +1,7 @@
 #include "LASsie.h"
 
 #include <string.h>
+#include <stdio.h>
 
 static const char lSystemIdentifier[33] = "LASsie Library v1.0\0\0\0\0\0\0\0\0\0\0\0\0\0"; // NOTE: Has to be NULL-filled to the very brim
 
@@ -378,7 +379,11 @@ bool modri::LASsie::Generate()
 		return true;
 
 
-	// TODO: Write VarLenRecs and PointDataRecs
+	// Write VLRs
+	for (size_t i = 0; i < this->mRecProvider->GetVarLenRecCount(); i++)
+	{
+		
+	}
 
 
 	return true;

@@ -47,6 +47,20 @@ static const size_t lVarLenRecHeaderSize =
 	32 + // Description
 	 0;  // === END ===
 
+static const size_t lGeoKeysHeaderSize = 
+	 2 + // Key Directory Version
+	 2 + // Key Revision
+	 2 + // Minor Revision
+	 2 + // Number Of Keys
+	 0;  // === END ===
+
+static const size_t lGeoKeysEntrySize = 
+	 2 + // Key ID
+	 2 + // TIFF Tag Location
+	 2 + // Count
+	 2 + // Value Offset
+	 0;  // === END ===
+
 static const size_t lPointDataRecSizeBase =
 	 4 + // X
 	 4 + // Y
@@ -129,6 +143,45 @@ static inline void _local_WriteDoubleAdv(modri::uint8 *&nBfr, double nVal)
 	_local_MemcpyAdv(nBfr, &nVal, sizeof(nVal));
 }
 
+typedef modri::uint8 _local_VarLenRecHeader[lVarLenRecHeaderSize];
+static inline void _local_FillVarLenRecHeader(_local_VarLenRecHeader &nVlrHeader, const modri::LASsie::VarLenRec &nVlr, size_t nDataSize)
+{
+	nVlrHeader[ 0] = 0x00;
+	nVlrHeader[ 1] = 0x00;
+	memcpy((nVlrHeader +  2), nVlr.UserId().Get(), 16);
+	nVlrHeader[18] = static_cast<modri::uint8>(nVlr.GetRecId());
+	nVlrHeader[19] = static_cast<modri::uint8>(nVlr.GetRecId() >> 8);
+	nVlrHeader[20] = static_cast<modri::uint8>(nDataSize);
+	nVlrHeader[21] = static_cast<modri::uint8>(nDataSize >> 8);
+	memcpy((nVlrHeader + 22), nVlr.Desc().Get(), 32);
+}
+
+typedef modri::uint8 _local_GeoKeyHeader[lGeoKeysHeaderSize];
+static inline void _local_FillGeoKeyHeader(_local_GeoKeyHeader &nGkHeader, size_t nEntryCount)
+{
+	nGkHeader[0] = 0x01;
+	nGkHeader[1] = 0x00;
+	nGkHeader[2] = 0x01;
+	nGkHeader[3] = 0x00;
+	nGkHeader[4] = 0x00;
+	nGkHeader[5] = 0x00;
+	nGkHeader[6] = static_cast<modri::uint8>(nEntryCount);
+	nGkHeader[7] = static_cast<modri::uint8>(nEntryCount >> 8);
+}
+
+typedef modri::uint8 _local_GeoKeyEntry[lGeoKeysEntrySize];
+static inline void _local_FillGeoKeyEntry(_local_GeoKeyEntry &nGkEntry, const modri::LASsie::GeoKey &nKey)
+{
+	nGkEntry[0] = static_cast<modri::uint8>(nKey.GetKeyId());
+	nGkEntry[1] = static_cast<modri::uint8>(nKey.GetKeyId() >> 8);
+	nGkEntry[2] = static_cast<modri::uint8>(nKey.GetTagLocat());
+	nGkEntry[3] = static_cast<modri::uint8>(nKey.GetTagLocat() >> 8);
+	nGkEntry[4] = static_cast<modri::uint8>(nKey.GetCount());
+	nGkEntry[5] = static_cast<modri::uint8>(nKey.GetCount() >> 8);
+	nGkEntry[6] = static_cast<modri::uint8>(nKey.GetValOffset());
+	nGkEntry[7] = static_cast<modri::uint8>(nKey.GetValOffset() >> 8);
+}
+
 
 // 
 // LASsie
@@ -192,9 +245,27 @@ bool modri::LASsie::Generate()
 	_local_WriteLeAdv(oCurPos, this->mCreatYear);    // File Creation Year
 	_local_WriteLeAdv(oCurPos, static_cast<modri::uint16>(lPublicHeaderSize)); // Header Size
 
-	// WARNING: SET THESE!!!
-	_local_WriteLeAdv(oCurPos, static_cast<modri::uint32>(0xA5A55A5A)); // Offset to point data
-	_local_WriteLeAdv(oCurPos, static_cast<modri::uint32>(0xF00F0FF0)); // Number of Variable Length Records 
+
+	// VLR values
+	modri::uint32 oGeoKeyDataSize = 
+		static_cast<modri::uint32>(lGeoKeysHeaderSize) +
+		static_cast<modri::uint32>(this->mGeoKeys.size() * lGeoKeysEntrySize);
+	modri::uint32 oPdOffset =
+		static_cast<modri::uint32>(lPublicHeaderSize) +
+		static_cast<modri::uint32>(lVarLenRecHeaderSize) +
+		oGeoKeyDataSize; // At least public header + GeoKeyDirectoryTag with its key entries
+	modri::uint32 oVlrCount = 1; // At least one, which is the mandatory GeoKeyDirectoryTag record
+
+	if (this->mRecProvider != NULL)
+	{
+		oVlrCount += static_cast<modri::uint32>(this->mRecProvider->GetVarLenRecCount());
+		for (size_t i = (oVlrCount - 1); i-- != 0;)
+			oPdOffset += static_cast<modri::uint32>(this->mRecProvider->GetVarLenRecDataSize(i));
+	}
+
+	_local_WriteLeAdv(oCurPos, oPdOffset); // Offset to point data
+	_local_WriteLeAdv(oCurPos, oVlrCount); // Number of Variable Length Records 
+
 
 	*oCurPos++ = static_cast<modri::uint8>(this->mPdrFormat); // Point Data Format ID
 	_local_WriteLeAdv(oCurPos, static_cast<modri::uint16>(lPointDataRecSizes[static_cast<modri::uint8>(this->mPdrFormat)]));
@@ -220,6 +291,7 @@ bool modri::LASsie::Generate()
 	_local_WriteDoubleAdv(oCurPos, this->mMax.sZ);
 	_local_WriteDoubleAdv(oCurPos, this->mMin.sZ);
 
+
 	// Write Public Header Block
 	if (this->mInout->Write(oPubHeader, sizeof(oPubHeader)) != true)
 	{
@@ -227,7 +299,47 @@ bool modri::LASsie::Generate()
 		return false;
 	}
 
+
+	// Write (mandatory) GeoKeyDirectoryTag VLR
+	if (oGeoKeyDataSize > 0xFFFF) // Max (2^16 - 1) size of geo keys data
+	{
+		this->mLastError = LASsie::leGeoKeysSize;
+		return false;
+	}
+	
+	_local_VarLenRecHeader oVlrHeader;
+	modri::LASsie::VarLenRec oVlr;
+	oVlr.UserId().Set("LASF_Projection");
+	oVlr.SetRecId(34735);
+	_local_FillVarLenRecHeader(oVlrHeader, oVlr, oGeoKeyDataSize);
+	if (this->mInout->Write(oVlrHeader, sizeof(oVlrHeader)) != true)
+	{
+		this->mLastError = LASsie::leWriteFail;
+		return false;
+	}
+
+	_local_GeoKeyHeader oGkHeader;
+	_local_FillGeoKeyHeader(oGkHeader, this->mGeoKeys.size());
+	if (this->mInout->Write(oGkHeader, sizeof(oGkHeader)) != true)
+	{
+		this->mLastError = LASsie::leWriteFail;
+		return false;
+	}
+
+	_local_GeoKeyEntry oGkEntry;
+	for (size_t i = 0; i < this->mGeoKeys.size(); i++)
+	{
+		_local_FillGeoKeyEntry(oGkEntry, this->mGeoKeys.at(i));
+		if (this->mInout->Write(oGkEntry, sizeof(oGkEntry)) != true)
+		{
+			this->mLastError = LASsie::leWriteFail;
+			return false;
+		}
+	}
+
+	
 	// TODO: Write VarLenRecs and PointDataRecs
+
 
 	return true;
 }

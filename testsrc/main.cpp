@@ -444,8 +444,9 @@ static int TestLASsieGenerate()
 
 	modri::LASsie oLas;
 	modri::LASsie::Guid oGuid;
-	_local_Inout<226> oInoutTooSmall;
-	_local_Inout<227> oInout;
+	modri::LASsie::GeoKey oGeoKey;
+	_local_Inout<304> oInoutTooSmall;
+	_local_Inout<305> oInout;
 	const modri::uint8 *oBfrPtr;
 
 
@@ -474,11 +475,24 @@ static int TestLASsieGenerate()
 	oLas.SetMax(3.1, 3.2, 3.3);
 	oLas.SetMin(4.1, 4.2, 4.3);
 
+	oGeoKey.SetKeyId(0x1001);
+	oGeoKey.SetTagLocat(0x2002);
+	oGeoKey.SetCount(0x3003);
+	oGeoKey.SetValOffset(0x4004);
+	oLas.GetGeoKeys().push_back(oGeoKey);
+
+	oGeoKey.SetKeyId(0x5005);
+	oGeoKey.SetTagLocat(0x6006);
+	oGeoKey.SetCount(0x7007);
+	oGeoKey.SetValOffset(0x8008);
+	oLas.GetGeoKeys().push_back(oGeoKey);
+
 
 	// Generating
 
 	oLas.SetInout(&oInoutTooSmall);
 	Test(oLas.Generate() == false);
+	Test(oLas.GetLastError() == modri::LASsie::leWriteFail);
 
 	oLas.SetInout(&oInout);
 	Test(oLas.Generate() == true);
@@ -557,18 +571,18 @@ static int TestLASsieGenerate()
 	Test(oBfrPtr[1] == 0x00);
 	oBfrPtr += 2;
 
-	// Offset Point Data; WARNING: These are only testing placeholder values
-	Test(oBfrPtr[0] == 0x5A);
-	Test(oBfrPtr[1] == 0x5A);
-	Test(oBfrPtr[2] == 0xA5);
-	Test(oBfrPtr[3] == 0xA5);
+	// Offset Point Data; WARNING: Correct these for the custom VLR sizes
+	Test(oBfrPtr[0] == 0x31);
+	Test(oBfrPtr[1] == 0x01);
+	Test(oBfrPtr[2] == 0x00);
+	Test(oBfrPtr[3] == 0x00);
 	oBfrPtr += 4;
 
-	// Number of Variable Length Records; WARNING: These are only testing placeholder values
-	Test(oBfrPtr[0] == 0xF0);
-	Test(oBfrPtr[1] == 0x0F);
-	Test(oBfrPtr[2] == 0x0F);
-	Test(oBfrPtr[3] == 0xF0);
+	// Number of Variable Length Records; WARNING: Correct these for the custom VLR count
+	Test(oBfrPtr[0] == 0x01);
+	Test(oBfrPtr[1] == 0x00);
+	Test(oBfrPtr[2] == 0x00);
+	Test(oBfrPtr[3] == 0x00);
 	oBfrPtr += 4;
 
 	// Point Data Format ID
@@ -630,6 +644,55 @@ static int TestLASsieGenerate()
 	Test(_cmp_BfrDoubleAdv(oBfrPtr, 4.2) == 0);
 	Test(_cmp_BfrDoubleAdv(oBfrPtr, 3.3) == 0);
 	Test(_cmp_BfrDoubleAdv(oBfrPtr, 4.3) == 0);
+
+
+	// VLR header for GeoKeyDirectoryTag
+	Test(oBfrPtr[0] == 0x00);
+	Test(oBfrPtr[1] == 0x00);
+	oBfrPtr += 2;
+	Test(_cmp_LASsieStr("LASF_Projection", oBfrPtr, 16) == 0);
+	oBfrPtr += 16;
+	Test(oBfrPtr[0] == 0xAF);
+	Test(oBfrPtr[1] == 0x87);
+	Test(oBfrPtr[2] == 0x18);
+	Test(oBfrPtr[3] == 0x00);
+	oBfrPtr += 4;
+	Test(_cmp_LASsieStr("", oBfrPtr, 32) == 0);
+	oBfrPtr += 32;
+	
+	// GeoKeyDirectoryTag header
+	Test(oBfrPtr[0] == 0x01);
+	Test(oBfrPtr[1] == 0x00);
+	Test(oBfrPtr[2] == 0x01);
+	Test(oBfrPtr[3] == 0x00);
+	Test(oBfrPtr[4] == 0x00);
+	Test(oBfrPtr[5] == 0x00);
+	Test(oBfrPtr[6] == 0x02);
+	Test(oBfrPtr[7] == 0x00);
+	oBfrPtr += 8;
+
+	// GeoKeyDirectoryTag KeyEntry[0]
+	Test(oBfrPtr[0] == 0x01);
+	Test(oBfrPtr[1] == 0x10);
+	Test(oBfrPtr[2] == 0x02);
+	Test(oBfrPtr[3] == 0x20);
+	Test(oBfrPtr[4] == 0x03);
+	Test(oBfrPtr[5] == 0x30);
+	Test(oBfrPtr[6] == 0x04);
+	Test(oBfrPtr[7] == 0x40);
+	oBfrPtr += 8;
+
+	// GeoKeyDirectoryTag KeyEntry[1]
+	Test(oBfrPtr[0] == 0x05);
+	Test(oBfrPtr[1] == 0x50);
+	Test(oBfrPtr[2] == 0x06);
+	Test(oBfrPtr[3] == 0x60);
+	Test(oBfrPtr[4] == 0x07);
+	Test(oBfrPtr[5] == 0x70);
+	Test(oBfrPtr[6] == 0x08);
+	Test(oBfrPtr[7] == 0x80);
+	oBfrPtr += 8;
+
 
 	return 0;
 }

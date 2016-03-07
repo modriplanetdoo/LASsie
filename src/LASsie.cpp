@@ -142,7 +142,7 @@ void modri::LASsie::Reset()
 	this->mGenerSw.Set("");
 	this->mCreatDay = 0;
 	this->mCreatYear = 0;
-	this->mPdrf = LASsie::Pdrf0;
+	this->mPdrFormat = LASsie::pdrFormat0;
 	memset(&this->mScale, 0, sizeof(this->mScale));
 	memset(&this->mOffset, 0, sizeof(this->mOffset));
 	memset(&this->mMax, 0, sizeof(this->mMax));
@@ -193,8 +193,8 @@ bool modri::LASsie::Generate()
 	_local_WriteLeAdv(oCurPos, static_cast<modri::uint32>(0xA5A55A5A)); // Offset to point data
 	_local_WriteLeAdv(oCurPos, static_cast<modri::uint32>(0xF00F0FF0)); // Number of Variable Length Records 
 
-	*oCurPos++ = static_cast<modri::uint8>(this->mPdrf); // Point Data Format ID
-	_local_WriteLeAdv(oCurPos, static_cast<modri::uint16>(lPointDataRecSizes[static_cast<modri::uint8>(this->mPdrf)]));
+	*oCurPos++ = static_cast<modri::uint8>(this->mPdrFormat); // Point Data Format ID
+	_local_WriteLeAdv(oCurPos, static_cast<modri::uint16>(lPointDataRecSizes[static_cast<modri::uint8>(this->mPdrFormat)]));
 
 	// WARNING: SET THESE!!!
 	_local_WriteLeAdv(oCurPos, static_cast<modri::uint32>(0x01234567)); // Number of point records 

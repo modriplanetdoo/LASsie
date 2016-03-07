@@ -222,7 +222,7 @@ static int TestLASsie()
 	Test(_cmp_LASsieStr(oLas.GenerSw(), "") == 0);
 	Test(oLas.GetCreatDay() == 0);
 	Test(oLas.GetCreatYear() == 0);
-	Test(oLas.GetPdrf() == modri::LASsie::Pdrf0);
+	Test(oLas.GetPdrFormat() == modri::LASsie::pdrFormat0);
 	Test(_cmp_LASsieCoord(oLas.GetScale(), oCoordVolatile) == 0);
 	Test(_cmp_LASsieCoord(oLas.GetOffset(), oCoordVolatile) == 0);
 	Test(_cmp_LASsieCoord(oLas.GetMax(), oCoordVolatile) == 0);
@@ -261,8 +261,8 @@ static int TestLASsie()
 	Test(oLas.GetCreatDay() == 366);
 	Test(oLas.GetCreatYear() == 2016);
 
-	oLas.SetPdrf(modri::LASsie::Pdrf3);
-	Test(oLas.GetPdrf() == modri::LASsie::Pdrf3);
+	oLas.SetPdrFormat(modri::LASsie::pdrFormat3);
+	Test(oLas.GetPdrFormat() == modri::LASsie::pdrFormat3);
 
 	oLas.SetScale(1.1, 1.2, 1.3);
 	oCoordVolatile.sX = 1.1;
@@ -436,7 +436,7 @@ static int TestLASsieGenerate()
 	oLas.SetGuid(oGuid);
 	oLas.GenerSw().Set("Some Generating Software");
 	oLas.SetCreat(2016, 366);
-	oLas.SetPdrf(modri::LASsie::Pdrf3);
+	oLas.SetPdrFormat(modri::LASsie::pdrFormat3);
 	oLas.SetScale(1.1, 1.2, 1.3);
 	oLas.SetOffset(2.1, 2.2, 2.3);
 	oLas.SetMax(3.1, 3.2, 3.3);

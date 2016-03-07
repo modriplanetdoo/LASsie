@@ -39,12 +39,12 @@ namespace modri
 				modri::uint8 sD4[8];
 			};
 
-			enum Pdrf
+			enum PdrFormat
 			{
-				Pdrf0,
-				Pdrf1,
-				Pdrf2,
-				Pdrf3
+				pdrFormat0 = 0,
+				pdrFormat1 = 1,
+				pdrFormat2 = 2,
+				pdrFormat3 = 3
 			};
 
 			template <class tType>
@@ -178,7 +178,7 @@ namespace modri
 			LASsie::GenerSwType mGenerSw;
 			modri::uint16 mCreatDay;
 			modri::uint16 mCreatYear;
-			LASsie::Pdrf mPdrf;
+			LASsie::PdrFormat mPdrFormat;
 			LASsie::ScaleType mScale;
 			LASsie::OffsetType mOffset;
 			LASsie::CoordEdgeType mMax;
@@ -206,8 +206,8 @@ namespace modri
 			inline modri::uint16	GetCreatDay() const { return this->mCreatDay; }
 			inline modri::uint16 GetCreatYear() const { return this->mCreatYear; }
 			inline void SetCreat(modri::uint16 nCreatYear, modri::uint16 nCreatDay) { this->mCreatYear = nCreatYear; this->mCreatDay = nCreatDay; }
-			inline LASsie::Pdrf GetPdrf() const { return this->mPdrf; }
-			inline void SetPdrf(LASsie::Pdrf nPdrf) { this->mPdrf = nPdrf; }
+			inline LASsie::PdrFormat GetPdrFormat() const { return this->mPdrFormat; }
+			inline void SetPdrFormat(LASsie::PdrFormat nPdrFormat) { this->mPdrFormat = nPdrFormat; }
 			inline const LASsie::ScaleType &GetScale() const { return this->mScale; }
 			inline void SetScale(double nX, double nY, double nZ) { this->mScale.sX = nX; this->mScale.sY = nY; this->mScale.sZ = nZ; }
 			inline const LASsie::OffsetType &GetOffset() const { return this->mOffset; }

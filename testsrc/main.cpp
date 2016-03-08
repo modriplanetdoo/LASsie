@@ -538,8 +538,8 @@ static int TestLASsieGenerate()
 	_local_RecProvider::Vlr oVlr;
 	_local_RecProvider::Pdr oPdr;
 	_local_RecProvider oRecProv;
-	_local_Inout<547> oInoutTooSmall;
-	_local_Inout<548> oInout;
+	_local_Inout<615> oInoutTooSmall;
+	_local_Inout<616> oInout;
 	const modri::uint8 *oBfrPtr;
 
 
@@ -598,22 +598,22 @@ static int TestLASsieGenerate()
 	oVlr.Data().Set("And another VLR string data"); // 27 bytes
 	oRecProv.GetVlrList().push_back(oVlr);
 
-	oPdr.SetCoord(0xF0E1, 0xD2B3, 0xA495);
-	oPdr.SetInten(0x8677);
-	oPdr.SetRetNum(6); // will fail, will correct later after fail check
-	oPdr.SetRetTotal(6); // will fail, will correct later after fail check
+	oPdr.SetCoord(0xF0E1D2B3, 0xA4958677, 0x68594A3B);
+	oPdr.SetInten(0x2C1D);
+	oPdr.SetRetNum(6);
+	oPdr.SetRetTotal(6);
 	oPdr.SetScanDirFlag(true);
 	oPdr.SetFlightEdge(false);
 	oPdr.SetClassif(0xA5);
-	oPdr.SetScanAngle(-91); // will fail, will correct later after fail check
+	oPdr.SetScanAngle(-120);
 	oPdr.SetUserData(0x5A);
 	oPdr.SetPointSrcId(0xFA50);
 	oPdr.SetGpsTime(12345.6789);
-	oPdr.SetColor(0xDC, 0x63, 0x34);
+	oPdr.SetColor(0xDC29, 0x63BD, 0x347F);
 	oRecProv.GetPdrList().push_back(oPdr);
 
-	oPdr.SetCoord(0x6859, 0x4A3B, 0x2C1D);
-	oPdr.SetInten(0x0E0F);
+	oPdr.SetCoord(0x0F1E2D3B, 0x4A596877, 0x8695A4B3);
+	oPdr.SetInten(0xC2D1);
 	oPdr.SetRetNum(1);
 	oPdr.SetRetTotal(2);
 	oPdr.SetScanDirFlag(false);
@@ -623,7 +623,7 @@ static int TestLASsieGenerate()
 	oPdr.SetUserData(0xA5);
 	oPdr.SetPointSrcId(0x05AF);
 	oPdr.SetGpsTime(98765.4321);
-	oPdr.SetColor(0x8C, 0x33, 0x2B);
+	oPdr.SetColor(0x8CAA, 0x3381, 0x2B03);
 	oRecProv.GetPdrList().push_back(oPdr);
 
 
@@ -894,7 +894,85 @@ static int TestLASsieGenerate()
 	Test(oPdOffsetStat == oPdOffsetCalc);
 
 
-	// TODO: Check if Point Data Offset matches actual offset in output !!
+	// PDR[0]
+	Test(oBfrPtr[0] == 0xB3);
+	Test(oBfrPtr[1] == 0xD2);
+	Test(oBfrPtr[2] == 0xE1);
+	Test(oBfrPtr[3] == 0xF0);
+	oBfrPtr += 4;
+	Test(oBfrPtr[0] == 0x77);
+	Test(oBfrPtr[1] == 0x86);
+	Test(oBfrPtr[2] == 0x95);
+	Test(oBfrPtr[3] == 0xA4);
+	oBfrPtr += 4;
+	Test(oBfrPtr[0] == 0x3B);
+	Test(oBfrPtr[1] == 0x4A);
+	Test(oBfrPtr[2] == 0x59);
+	Test(oBfrPtr[3] == 0x68);
+	oBfrPtr += 4;
+	Test(oBfrPtr[0] == 0x1D);
+	Test(oBfrPtr[1] == 0x2C);
+	oBfrPtr += 2;
+	Test(*oBfrPtr++ == (
+		((6 & 0x07)) |
+		((6 & 0x07) << 3) |
+		0x40 |
+		0x00));
+	Test(*oBfrPtr++ == 0xA5);
+	Test(*oBfrPtr++ == static_cast<modri::uint8>(-120));
+	Test(*oBfrPtr++ == 0x5A);
+	Test(oBfrPtr[0] == 0x50);
+	Test(oBfrPtr[1] == 0xFA);
+	oBfrPtr += 2;
+	Test(_cmp_BfrDoubleAdv(oBfrPtr, 12345.6789) == 0);
+	Test(oBfrPtr[0] == 0x29);
+	Test(oBfrPtr[1] == 0xDC);
+	Test(oBfrPtr[2] == 0xBD);
+	Test(oBfrPtr[3] == 0x63);
+	Test(oBfrPtr[4] == 0x7F);
+	Test(oBfrPtr[5] == 0x34);
+	oBfrPtr += 6;
+
+
+	// PDR[1]
+	Test(oBfrPtr[0] == 0x3B);
+	Test(oBfrPtr[1] == 0x2D);
+	Test(oBfrPtr[2] == 0x1E);
+	Test(oBfrPtr[3] == 0x0F);
+	oBfrPtr += 4;
+	Test(oBfrPtr[0] == 0x77);
+	Test(oBfrPtr[1] == 0x68);
+	Test(oBfrPtr[2] == 0x59);
+	Test(oBfrPtr[3] == 0x4A);
+	oBfrPtr += 4;
+	Test(oBfrPtr[0] == 0xB3);
+	Test(oBfrPtr[1] == 0xA4);
+	Test(oBfrPtr[2] == 0x95);
+	Test(oBfrPtr[3] == 0x86);
+	oBfrPtr += 4;
+	Test(oBfrPtr[0] == 0xD1);
+	Test(oBfrPtr[1] == 0xC2);
+	oBfrPtr += 2;
+	Test(*oBfrPtr++ == (
+		((1 & 0x07)) |
+		((2 & 0x07) << 3) |
+		0x00 |
+		0x80));
+	Test(*oBfrPtr++ == 0x5A);
+	Test(*oBfrPtr++ == static_cast<modri::uint8>(-15));
+	Test(*oBfrPtr++ == 0xA5);
+	Test(oBfrPtr[0] == 0xAF);
+	Test(oBfrPtr[1] == 0x05);
+	oBfrPtr += 2;
+	Test(_cmp_BfrDoubleAdv(oBfrPtr, 98765.4321) == 0);
+	Test(oBfrPtr[0] == 0xAA);
+	Test(oBfrPtr[1] == 0x8C);
+	Test(oBfrPtr[2] == 0x81);
+	Test(oBfrPtr[3] == 0x33);
+	Test(oBfrPtr[4] == 0x03);
+	Test(oBfrPtr[5] == 0x2B);
+	oBfrPtr += 6;
+
 
 	return 0;
 }

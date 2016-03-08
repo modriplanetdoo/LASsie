@@ -147,13 +147,11 @@ static inline void _local_WriteDoubleAdv(modri::uint8 *&nBfr, double nVal)
 typedef modri::uint8 _local_VarLenRecHeader[lVarLenRecHeaderSize];
 static inline void _local_FillVarLenRecHeader(_local_VarLenRecHeader &nVlrHeader, const modri::LASsie::VarLenRec &nVlr, size_t nDataSize)
 {
-	nVlrHeader[ 0] = 0x00;
-	nVlrHeader[ 1] = 0x00;
-	memcpy((nVlrHeader +  2), nVlr.UserId().Get(), 16);
-	nVlrHeader[18] = static_cast<modri::uint8>(nVlr.GetRecId());
-	nVlrHeader[19] = static_cast<modri::uint8>(nVlr.GetRecId() >> 8);
-	nVlrHeader[20] = static_cast<modri::uint8>(nDataSize);
-	nVlrHeader[21] = static_cast<modri::uint8>(nDataSize >> 8);
+	nVlrHeader[0] = 0x00;
+	nVlrHeader[1] = 0x00;
+	memcpy((nVlrHeader + 2), nVlr.UserId().Get(), 16);
+	_local_WriteLe((nVlrHeader + 18), static_cast<modri::uint16>(nVlr.GetRecId()));
+	_local_WriteLe((nVlrHeader + 20), static_cast<modri::uint16>(nDataSize));
 	memcpy((nVlrHeader + 22), nVlr.Desc().Get(), 32);
 }
 
@@ -166,21 +164,51 @@ static inline void _local_FillGeoKeyHeader(_local_GeoKeyHeader &nGkHeader, size_
 	nGkHeader[3] = 0x00;
 	nGkHeader[4] = 0x00;
 	nGkHeader[5] = 0x00;
-	nGkHeader[6] = static_cast<modri::uint8>(nEntryCount);
-	nGkHeader[7] = static_cast<modri::uint8>(nEntryCount >> 8);
+	_local_WriteLe((nGkHeader + 6), static_cast<modri::uint16>(nEntryCount));
 }
 
 typedef modri::uint8 _local_GeoKeyEntry[lGeoKeysEntrySize];
 static inline void _local_FillGeoKeyEntry(_local_GeoKeyEntry &nGkEntry, const modri::LASsie::GeoKey &nKey)
 {
-	nGkEntry[0] = static_cast<modri::uint8>(nKey.GetKeyId());
-	nGkEntry[1] = static_cast<modri::uint8>(nKey.GetKeyId() >> 8);
-	nGkEntry[2] = static_cast<modri::uint8>(nKey.GetTagLocat());
-	nGkEntry[3] = static_cast<modri::uint8>(nKey.GetTagLocat() >> 8);
-	nGkEntry[4] = static_cast<modri::uint8>(nKey.GetCount());
-	nGkEntry[5] = static_cast<modri::uint8>(nKey.GetCount() >> 8);
-	nGkEntry[6] = static_cast<modri::uint8>(nKey.GetValOffset());
-	nGkEntry[7] = static_cast<modri::uint8>(nKey.GetValOffset() >> 8);
+	_local_WriteLe((nGkEntry + 0), static_cast<modri::uint16>(nKey.GetKeyId()));
+	_local_WriteLe((nGkEntry + 2), static_cast<modri::uint16>(nKey.GetTagLocat()));
+	_local_WriteLe((nGkEntry + 4), static_cast<modri::uint16>(nKey.GetCount()));
+	_local_WriteLe((nGkEntry + 6), static_cast<modri::uint16>(nKey.GetValOffset()));
+}
+
+typedef modri::uint8 _local_PointDataRec[lPointDataRecFmt3Size]; // Format3 is the biggest of all
+static inline void _local_FillPointDataRec(_local_PointDataRec &nPdrData, const modri::LASsie::PointDataRec &nPdr, modri::LASsie::PdrFormat nFmt)
+{
+	_local_WriteLe((nPdrData +  0), static_cast<modri::sint32>(nPdr.GetCoord().sX));
+	_local_WriteLe((nPdrData +  4), static_cast<modri::sint32>(nPdr.GetCoord().sY));
+	_local_WriteLe((nPdrData +  8), static_cast<modri::sint32>(nPdr.GetCoord().sZ));
+	_local_WriteLe((nPdrData + 12), static_cast<modri::uint16>(nPdr.GetInten()));
+	nPdrData[14] =
+		((nPdr.GetRetNum() & 0x07)) |
+		((nPdr.GetRetTotal() & 0x07) << 3) |
+		((nPdr.GetScanDirFlag() == true) ? 0x40 : 0x00) |
+		((nPdr.IsFlightEdge() == true) ? 0x80 : 0x00);
+	nPdrData[15] = nPdr.GetClassif();
+	nPdrData[16] = nPdr.GetScanAngle();
+	nPdrData[17] = nPdr.GetUserData();
+	_local_WriteLe((nPdrData + 18), static_cast<modri::uint16>(nPdr.GetPointSrcId()));
+
+
+	modri::uint8 *oCurPos = nPdrData + 20;
+	
+	if (nFmt == modri::LASsie::pdrFormat1 || nFmt == modri::LASsie::pdrFormat3)
+	{
+		double oGpsTime = nPdr.GetGpsTime();
+		memcpy(oCurPos, &oGpsTime, sizeof(double));
+		oCurPos += sizeof(double);
+	}
+
+	if (nFmt == modri::LASsie::pdrFormat2 || nFmt == modri::LASsie::pdrFormat3)
+	{
+		_local_WriteLe((oCurPos + 0), static_cast<modri::uint16>(nPdr.GetColor().sR));
+		_local_WriteLe((oCurPos + 2), static_cast<modri::uint16>(nPdr.GetColor().sG));
+		_local_WriteLe((oCurPos + 4), static_cast<modri::uint16>(nPdr.GetColor().sB));
+	}
 }
 
 
@@ -231,19 +259,19 @@ bool modri::LASsie::Generate()
 	oPubHeader[3] = 'F';
 	oCurPos += 4;
 
-	_local_WriteLeAdv(oCurPos, this->mFileSrcId); // File Source ID
+	_local_WriteLeAdv(oCurPos, static_cast<modri::uint16>(this->mFileSrcId)); // File Source ID
 	_local_WriteLeAdv(oCurPos, static_cast<modri::uint16>(((this->mGlobalEnc == true) ? 0x0001 : 0x0000))); // Global Encoding
-	_local_WriteLeAdv(oCurPos, this->mGuid.sD1);  // GUID data 1
-	_local_WriteLeAdv(oCurPos, this->mGuid.sD2);  // GUID data 2
-	_local_WriteLeAdv(oCurPos, this->mGuid.sD3);  // GUID data 3
+	_local_WriteLeAdv(oCurPos, static_cast<modri::uint32>(this->mGuid.sD1));  // GUID data 1
+	_local_WriteLeAdv(oCurPos, static_cast<modri::uint16>(this->mGuid.sD2));  // GUID data 2
+	_local_WriteLeAdv(oCurPos, static_cast<modri::uint16>(this->mGuid.sD3));  // GUID data 3
 	_local_MemcpyAdv(oCurPos, this->mGuid.sD4, sizeof(this->mGuid.sD4));   // GUID data 4
 	*oCurPos++ = 1; // (LASF) Version Major
 	*oCurPos++ = 2; // (LASF) Version Minor
 	_local_MemcpyAdv(oCurPos, lSystemIdentifier, (sizeof(lSystemIdentifier) - 1)); // System Identifier
 	memcpy(oCurPos, this->mGenerSw.Get(), 32); // Generating Software
 	oCurPos += 32;
-	_local_WriteLeAdv(oCurPos, this->mCreatDay);     // File Creation Day of Year
-	_local_WriteLeAdv(oCurPos, this->mCreatYear);    // File Creation Year
+	_local_WriteLeAdv(oCurPos, static_cast<modri::uint16>(this->mCreatDay));     // File Creation Day of Year
+	_local_WriteLeAdv(oCurPos, static_cast<modri::uint16>(this->mCreatYear));    // File Creation Year
 	_local_WriteLeAdv(oCurPos, static_cast<modri::uint16>(lPublicHeaderSize)); // Header Size
 
 
@@ -268,8 +296,8 @@ bool modri::LASsie::Generate()
 				static_cast<modri::uint32>(this->mRecProvider->GetVarLenRecDataSize(i));
 	}
 
-	_local_WriteLeAdv(oCurPos, oPdOffset); // Offset to point data
-	_local_WriteLeAdv(oCurPos, oVlrCount); // Number of Variable Length Records 
+	_local_WriteLeAdv(oCurPos, static_cast<modri::uint32>(oPdOffset)); // Offset to point data
+	_local_WriteLeAdv(oCurPos, static_cast<modri::uint32>(oVlrCount)); // Number of Variable Length Records 
 
 
 	*oCurPos++ = static_cast<modri::uint8>(this->mPdrFormat); // Point Data Format ID
@@ -315,18 +343,18 @@ bool modri::LASsie::Generate()
 	_local_WriteLeAdv(oCurPos, static_cast<modri::uint32>(oPdrCountByRet[4])); // Number of points by return [4]
 
 
-	_local_WriteDoubleAdv(oCurPos, this->mScale.sX);
-	_local_WriteDoubleAdv(oCurPos, this->mScale.sY);
-	_local_WriteDoubleAdv(oCurPos, this->mScale.sZ);
-	_local_WriteDoubleAdv(oCurPos, this->mOffset.sX);
-	_local_WriteDoubleAdv(oCurPos, this->mOffset.sY);
-	_local_WriteDoubleAdv(oCurPos, this->mOffset.sZ);
-	_local_WriteDoubleAdv(oCurPos, this->mMax.sX);
-	_local_WriteDoubleAdv(oCurPos, this->mMin.sX);
-	_local_WriteDoubleAdv(oCurPos, this->mMax.sY);
-	_local_WriteDoubleAdv(oCurPos, this->mMin.sY);
-	_local_WriteDoubleAdv(oCurPos, this->mMax.sZ);
-	_local_WriteDoubleAdv(oCurPos, this->mMin.sZ);
+	_local_WriteDoubleAdv(oCurPos, static_cast<double>(this->mScale.sX));
+	_local_WriteDoubleAdv(oCurPos, static_cast<double>(this->mScale.sY));
+	_local_WriteDoubleAdv(oCurPos, static_cast<double>(this->mScale.sZ));
+	_local_WriteDoubleAdv(oCurPos, static_cast<double>(this->mOffset.sX));
+	_local_WriteDoubleAdv(oCurPos, static_cast<double>(this->mOffset.sY));
+	_local_WriteDoubleAdv(oCurPos, static_cast<double>(this->mOffset.sZ));
+	_local_WriteDoubleAdv(oCurPos, static_cast<double>(this->mMax.sX));
+	_local_WriteDoubleAdv(oCurPos, static_cast<double>(this->mMin.sX));
+	_local_WriteDoubleAdv(oCurPos, static_cast<double>(this->mMax.sY));
+	_local_WriteDoubleAdv(oCurPos, static_cast<double>(this->mMin.sY));
+	_local_WriteDoubleAdv(oCurPos, static_cast<double>(this->mMax.sZ));
+	_local_WriteDoubleAdv(oCurPos, static_cast<double>(this->mMin.sZ));
 
 
 	// Write Public Header Block
@@ -344,8 +372,8 @@ bool modri::LASsie::Generate()
 		return false;
 	}
 	
-	_local_VarLenRecHeader oVlrHeader;
 	modri::LASsie::VarLenRec oVlr;
+	_local_VarLenRecHeader oVlrHeader;
 
 	oVlr.UserId().Set("LASF_Projection");
 	oVlr.SetRecId(34735);
@@ -424,9 +452,23 @@ bool modri::LASsie::Generate()
 
 
 	// Write PDRs
+	LASsie::PointDataRec oPdr;
+	_local_PointDataRec oPdrData;
 	for (size_t i = 0; i < this->mRecProvider->GetPointDataRecCount(); i++)
 	{
-		
+		oPdr.Reset();
+		if (this->mRecProvider->FillPointDataRec(i, oPdr) != true)
+		{
+			this->mLastError = LASsie::lePdrFillFail;
+			return false;
+		}
+
+		_local_FillPointDataRec(oPdrData, oPdr, this->mPdrFormat);
+		if (this->mInout->Write(oPdrData, lPointDataRecSizes[this->mPdrFormat]) != true)
+		{
+			this->mLastError = LASsie::leWriteFail;
+			return false;
+		}
 	}
 
 

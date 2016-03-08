@@ -176,7 +176,8 @@ namespace modri
 					virtual bool FillGeoKey(size_t nIdx, LASsie::GeoKey &nGk) const = 0;
 					virtual size_t GetVarLenRecCount() const = 0;
 					virtual size_t GetVarLenRecDataSize(size_t nIdx) const = 0;
-					virtual bool FillVarLenRec(size_t nIdx, LASsie::VarLenRec &nVlr, const void *nData, size_t nDataSize) const = 0;
+					virtual const void *GetVarLenRecData(size_t nIdx) const = 0;
+					virtual bool FillVarLenRec(size_t nIdx, LASsie::VarLenRec &nVlr) const = 0;
 					virtual size_t GetPointDataRecCount() const = 0;
 					virtual size_t GetPointDataRecCountByRet(modri::uint8 nRet) const = 0;
 					virtual bool FillPointDataRec(size_t nIdx, LASsie::PointDataRec &nPdr) const = 0;
@@ -199,9 +200,11 @@ namespace modri
 				leNoInoutIface,
 				leWriteFail,
 				leReadFail,
-				leGeoKeysSize,
+				leGeoKeysSizeTooBig,
+				lePdrCountTooBig,
 				leGeoKeyFillFail,
-				lePdrCount
+				leVlrFillFail,
+				lePdrFillFail
 			};
 
 		private:

@@ -302,7 +302,7 @@ bool modri::LASsie::Generate()
 			oPdrCountByRet[3] > 0xFFFFFFFF ||
 			oPdrCountByRet[4] > 0xFFFFFFFF)
 		{
-			this->mLastError = LASsie::lePdrCount;
+			this->mLastError = LASsie::lePdrCountTooBig;
 			return false;
 		}
 	}
@@ -340,12 +340,13 @@ bool modri::LASsie::Generate()
 	// Write (mandatory) GeoKeyDirectoryTag VLR
 	if (oGeoKeyDataSize > 0xFFFF) // Max (2^16 - 1) size of geo keys data
 	{
-		this->mLastError = LASsie::leGeoKeysSize;
+		this->mLastError = LASsie::leGeoKeysSizeTooBig;
 		return false;
 	}
 	
 	_local_VarLenRecHeader oVlrHeader;
 	modri::LASsie::VarLenRec oVlr;
+
 	oVlr.UserId().Set("LASF_Projection");
 	oVlr.SetRecId(34735);
 	_local_FillVarLenRecHeader(oVlrHeader, oVlr, oGeoKeyDataSize);
@@ -399,9 +400,26 @@ bool modri::LASsie::Generate()
 
 
 	// Write VLRs
+	const void *oVlrData;
+	size_t oVlrDataSize;
 	for (size_t i = 0; i < this->mRecProvider->GetVarLenRecCount(); i++)
 	{
-		
+		oVlr.Reset();
+		if (this->mRecProvider->FillVarLenRec(i, oVlr) != true)
+		{
+			this->mLastError = LASsie::leVlrFillFail;
+			return false;
+		}
+		oVlrData = this->mRecProvider->GetVarLenRecData(i);
+		oVlrDataSize = this->mRecProvider->GetVarLenRecDataSize(i);
+
+		_local_FillVarLenRecHeader(oVlrHeader, oVlr, oVlrDataSize);
+		if (this->mInout->Write(oVlrHeader, sizeof(oVlrHeader)) != true ||
+			this->mInout->Write(oVlrData, oVlrDataSize) != true)
+		{
+			this->mLastError = LASsie::leWriteFail;
+			return false;
+		}
 	}
 
 

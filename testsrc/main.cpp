@@ -70,8 +70,9 @@ class _local_RecProvider : public modri::LASsie::RecProviderIface
 		}
 
 		virtual size_t GetVarLenRecCount() const { return this->mVlrList.size(); }
-		virtual size_t GetVarLenRecDataSize(size_t nIdx) const { return this->mVlrList.at(nIdx).Data().Len(); }
-		virtual bool FillVarLenRec(size_t nIdx, modri::LASsie::VarLenRec &nVlr, const void *nData, size_t nDataSize) const
+		virtual size_t GetVarLenRecDataSize(size_t nIdx) const { return ((nIdx < this->mVlrList.size()) ? this->mVlrList.at(nIdx).Data().Len() : 0); }
+		virtual const void *GetVarLenRecData(size_t nIdx) const { return ((nIdx < this->mVlrList.size()) ? this->mVlrList.at(nIdx).Data().Get() : NULL); }
+		virtual bool FillVarLenRec(size_t nIdx, modri::LASsie::VarLenRec &nVlr) const
 		{
 			if (nIdx >= this->mVlrList.size())
 				return false;
@@ -80,8 +81,6 @@ class _local_RecProvider : public modri::LASsie::RecProviderIface
 			nVlr.UserId().Set(oVlr.UserId().Get());
 			nVlr.SetRecId(oVlr.GetRecId());
 			nVlr.Desc().Set(oVlr.Desc().Get());
-			nData = oVlr.Data().Get();
-			nDataSize = oVlr.Data().Len();
 			return true;
 		}
 
@@ -539,8 +538,8 @@ static int TestLASsieGenerate()
 	_local_RecProvider::Vlr oVlr;
 	_local_RecProvider::Pdr oPdr;
 	_local_RecProvider oRecProv;
-	_local_Inout<304> oInoutTooSmall;
-	_local_Inout<305> oInout;
+	_local_Inout<547> oInoutTooSmall;
+	_local_Inout<548> oInout;
 	const modri::uint8 *oBfrPtr;
 
 
@@ -718,6 +717,11 @@ static int TestLASsieGenerate()
 	Test(oBfrPtr[1] == 0x02);
 	Test(oBfrPtr[2] == 0x00);
 	Test(oBfrPtr[3] == 0x00);
+	size_t oPdOffsetStat =  // Stated Point Data Offset (used later to verify it matches the actual PD offset in data)
+		(static_cast<size_t>(oBfrPtr[3]) << 24) |
+		(static_cast<size_t>(oBfrPtr[2]) << 16) |
+		(static_cast<size_t>(oBfrPtr[1]) <<  8) |
+		(static_cast<size_t>(oBfrPtr[0]));
 	oBfrPtr += 4;
 
 	// Number of Variable Length Records
@@ -835,6 +839,62 @@ static int TestLASsieGenerate()
 	Test(oBfrPtr[7] == 0x80);
 	oBfrPtr += 8;
 
+
+	// VLR[0]
+	Test(oBfrPtr[0] == 0x00);
+	Test(oBfrPtr[1] == 0x00);
+	oBfrPtr += 2;
+	Test(_cmp_LASsieStr("User_VLR_1", oBfrPtr, 16) == 0);
+	oBfrPtr += 16;
+	Test(oBfrPtr[0] == 0x10);
+	Test(oBfrPtr[1] == 0x32);
+	Test(oBfrPtr[2] == 0x17);
+	Test(oBfrPtr[3] == 0x00);
+	oBfrPtr += 4;
+	Test(_cmp_LASsieStr("User Variable Length Record 1", oBfrPtr, 32) == 0);
+	oBfrPtr += 32;
+	Test(memcmp(oBfrPtr, "This is VLR string data", 23) == 0);
+	oBfrPtr += 23;
+
+	// VLR[1]
+	Test(oBfrPtr[0] == 0x00);
+	Test(oBfrPtr[1] == 0x00);
+	oBfrPtr += 2;
+	Test(_cmp_LASsieStr("User_VLR_2", oBfrPtr, 16) == 0);
+	oBfrPtr += 16;
+	Test(oBfrPtr[0] == 0x54);
+	Test(oBfrPtr[1] == 0x76);
+	Test(oBfrPtr[2] == 0x1F);
+	Test(oBfrPtr[3] == 0x00);
+	oBfrPtr += 4;
+	Test(_cmp_LASsieStr("User Variable Length Record 2", oBfrPtr, 32) == 0);
+	oBfrPtr += 32;
+	Test(memcmp(oBfrPtr, "This is another VLR string data", 31) == 0);
+	oBfrPtr += 31;
+
+	// VLR[2]
+	Test(oBfrPtr[0] == 0x00);
+	Test(oBfrPtr[1] == 0x00);
+	oBfrPtr += 2;
+	Test(_cmp_LASsieStr("User_VLR_3", oBfrPtr, 16) == 0);
+	oBfrPtr += 16;
+	Test(oBfrPtr[0] == 0x98);
+	Test(oBfrPtr[1] == 0xBA);
+	Test(oBfrPtr[2] == 0x1B);
+	Test(oBfrPtr[3] == 0x00);
+	oBfrPtr += 4;
+	Test(_cmp_LASsieStr("User Variable Length Record 3", oBfrPtr, 32) == 0);
+	oBfrPtr += 32;
+	Test(memcmp(oBfrPtr, "And another VLR string data", 27) == 0);
+	oBfrPtr += 27;
+
+
+	// Check stated Point Data Offset with actual offset in data
+	size_t oPdOffsetCalc = (oBfrPtr - oInout.GetBfr());
+	Test(oPdOffsetStat == oPdOffsetCalc);
+
+
+	// TODO: Check if Point Data Offset matches actual offset in output !!
 
 	return 0;
 }

@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <vector>
+#include <fstream>
 
 // main() is at the very bottom of the file
 
@@ -134,6 +135,36 @@ class _local_Inout : public modri::LASsie::InoutIface
 			{
 				memcpy((this->mBfr + this->mBfrOff), nData, nDataSize);
 				this->mBfrOff += nDataSize;
+				return true;
+			}
+			else
+				return false;
+		}
+};
+
+class _local_InoutFile : public modri::LASsie::InoutIface
+{
+	private:
+		std::ofstream mFs;
+
+	public:
+		inline _local_InoutFile() { }
+		inline virtual ~_local_InoutFile() { this->Close(); }
+
+		inline bool IsOpen() const { return this->mFs.is_open(); }
+		inline bool Open(const char *nFilename)
+		{
+			this->mFs.open(nFilename, (std::ios_base::out | std::ios_base::trunc | std::ios_base::binary));
+			return this->mFs.is_open();
+		}
+		inline void Close() { this->mFs.close(); }
+
+		virtual bool Read(void *nBfr, size_t nBfrSize, size_t &nReadSize) { return false; }
+		virtual bool Write(const void *nData, size_t nDataSize)
+		{
+			if (this->mFs.is_open() == true)
+			{
+				this->mFs.write(static_cast<const char *>(nData), nDataSize);
 				return true;
 			}
 			else
@@ -978,18 +1009,44 @@ static int TestLASsieGenerate()
 }
 
 
+int TestLASsieToFile(modri::uint32 nPointNum, const char *nFilename)
+{
+	_local_InoutFile oFile;
+	Test(oFile.Open(nFilename) == true);
+
+	
+
+	oFile.Close();
+	return 0;
+}
+
+
 // main()
 
 int main(int argc, char **argv)
 {
-	Test(TestLASsieString() == 0);
-	Test(TestLASsie() == 0);
-	Test(TestLASsieGeoKey() == 0);
-	Test(TestLASsieVarLenRec() == 0);
-	Test(TestLASsiePointDataRec() == 0);
-	Test(TestLASsieGenerate() == 0);
-	
-	printf("=== ALL TESTS PASSED ===\n");
+	if (argc == 1)
+	{
+		Test(TestLASsieString() == 0);
+		Test(TestLASsie() == 0);
+		Test(TestLASsieGeoKey() == 0);
+		Test(TestLASsieVarLenRec() == 0);
+		Test(TestLASsiePointDataRec() == 0);
+		Test(TestLASsieGenerate() == 0);
+		printf("=== ALL TESTS PASSED ===\n");
+	}
+	else
+	if (argc == 3)
+	{
+		modri::uint32 oPointCount = strtoul(argv[1], NULL, 10);
+		if (oPointCount > 0)
+			Test(TestLASsieToFile(oPointCount, argv[2]) == 0)
+		else
+		{
+			printf("\nPoint count value is not valid or is 0.\nRun program like:\n    testLASsie NumberOfPoints FilePath\n");
+			return 1;
+		}
+	}
 
     return 0;
 }

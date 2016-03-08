@@ -188,7 +188,7 @@ namespace modri
 					virtual const void *GetVarLenRecData(size_t nIdx) const = 0;
 					virtual bool FillVarLenRec(size_t nIdx, LASsie::VarLenRec &nVlr) const = 0;
 					virtual size_t GetPointDataRecCount() const = 0;
-					virtual size_t GetPointDataRecCountByRet(modri::uint8 nRet) const = 0;
+					virtual size_t GetPointDataRecCountByRet(modri::uint8 nRetIdx) const = 0;
 					virtual bool FillPointDataRec(size_t nIdx, LASsie::PointDataRec &nPdr) const = 0;
 			};
 

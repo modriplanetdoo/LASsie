@@ -87,7 +87,7 @@ class _local_RecProvider : public modri::LASsie::RecProviderIface
 		}
 
 		virtual size_t GetPointDataRecCount() const { return this->mPdrList.size(); }
-		virtual size_t GetPointDataRecCountByRet(modri::uint8 nRet) const { return ((nRet == 0) ? this->mPdrList.size() : 0); }
+		virtual size_t GetPointDataRecCountByRet(modri::uint8 nRetIdx) const { return ((nRetIdx == 0) ? this->mPdrList.size() : 0); }
 		virtual bool FillPointDataRec(size_t nIdx, modri::LASsie::PointDataRec &nPdr) const
 		{
 			if (nIdx >= this->mPdrList.size())
@@ -119,10 +119,15 @@ class _local_RecProviderRandPdr : public modri::LASsie::RecProviderIface
 		
 
 	private:
-		modri::uint32 mPointNum;
+		modri::uint32 mDimens;
+		const size_t mPointNum;
+		const modri::uint32 mScaleDiv;
+		
+		mutable modri::uint32 mCurColor;
 
 	public:
-		inline _local_RecProviderRandPdr(modri::uint32 nPointNum) : mPointNum(nPointNum) { }
+		inline _local_RecProviderRandPdr(modri::uint32 nDimens, modri::uint32 nScaleDiv)
+			: mDimens(nDimens), mPointNum(nDimens * nDimens * nDimens), mScaleDiv(nScaleDiv), mCurColor(0) { }
 
 		virtual size_t GetGeoKeyCount() const { return 0; }
 		virtual bool FillGeoKey(size_t nIdx, modri::LASsie::GeoKey &nGk) const { return false; }
@@ -132,25 +137,29 @@ class _local_RecProviderRandPdr : public modri::LASsie::RecProviderIface
 		virtual bool FillVarLenRec(size_t nIdx, modri::LASsie::VarLenRec &nVlr) const { return false; }
 
 		virtual size_t GetPointDataRecCount() const { return this->mPointNum; }
-		virtual size_t GetPointDataRecCountByRet(modri::uint8 nRet) const { return ((nRet == 0) ? this->mPointNum : 0); }
+		virtual size_t GetPointDataRecCountByRet(modri::uint8 nRetIdx) const { return ((nRetIdx == 0) ? this->mPointNum : 0); }
 		virtual bool FillPointDataRec(size_t nIdx, modri::LASsie::PointDataRec &nPdr) const
 		{
-			//if (nIdx >= this->mPdrList.size())
-			//	return false;
+			if (nIdx >= this->mPointNum)
+				return false;
 
-			//const _local_RecProvider::Pdr &oPdr = this->mPdrList.at(nIdx);
-			//nPdr.SetCoord(oPdr.GetCoord().sX, oPdr.GetCoord().sY, oPdr.GetCoord().sZ);
-			//nPdr.SetInten(oPdr.GetInten());
-			//nPdr.SetRetNum(oPdr.GetRetNum());
-			//nPdr.SetRetTotal(oPdr.GetRetTotal());
-			//nPdr.SetScanDirFlag(oPdr.GetScanDirFlag());
-			//nPdr.SetFlightEdge(oPdr.IsFlightEdge());
-			//nPdr.SetClassif(oPdr.GetClassif());
-			//nPdr.SetScanAngle(oPdr.GetScanAngle());
-			//nPdr.SetUserData(oPdr.GetUserData());
-			//nPdr.SetPointSrcId(oPdr.GetPointSrcId());
-			//nPdr.SetGpsTime(oPdr.GetGpsTime());
-			//nPdr.SetColor(oPdr.GetColor().sR, oPdr.GetColor().sG, oPdr.GetColor().sB);
+			static const modri::uint32 oSubtr = (this->mDimens / 2);
+			static const modri::uint32 oDivX = 1;
+			static const modri::uint32 oDivY = this->mDimens;
+			static const modri::uint32 oDivZ = (this->mDimens * this->mDimens);
+
+			nPdr.SetCoord(
+					((((nIdx / oDivX) % this->mDimens) - oSubtr) * this->mScaleDiv),
+					((((nIdx / oDivY) % this->mDimens) - oSubtr) * this->mScaleDiv),
+					((((nIdx / oDivZ) % this->mDimens) - oSubtr) * this->mScaleDiv)
+				);
+			nPdr.SetSynthetic(true);
+			nPdr.SetColor(
+				((this->mCurColor & 0x0000FF) << 8),
+				((this->mCurColor & 0x00FF00)),
+				((this->mCurColor & 0xFF0000) >> 8));
+
+			this->mCurColor++;
 			return true;
 		}
 };
@@ -1073,25 +1082,36 @@ static int TestLASsieGenerate()
 }
 
 
-int TestLASsieToFile(modri::uint32 nPointNum, const char *nFilename)
+int TestLASsieToFile(modri::uint32 nDimens, const char *nFilename)
 {
+	static const modri::uint32 oScaleDiv = 1000;
+
 	time_t oCreatTimeT = time(NULL);
 	struct tm oCreatTm;
 	localtime_s(&oCreatTm, &oCreatTimeT);
 
 	modri::LASsie oLas;
-	_local_RecProviderRandPdr oRecProv(nPointNum);
+	_local_RecProviderRandPdr oRecProv(nDimens, oScaleDiv);
 	_local_InoutFile oFile;
 	Test(oFile.Open(nFilename) == true);
 
 	oLas.SetFileSrcId(12345);
 	oLas.SetGlobalEnc(false);
 	oLas.GenerSw().Set("LASsie Library v1.0 Test Suite");
-	oLas.SetCreat(oCreatTm.tm_year, oCreatTm.tm_yday);
+	oLas.SetCreat((oCreatTm.tm_year + 1900), oCreatTm.tm_yday);
 	oLas.SetPdrFormat(modri::LASsie::pdrFormat2); // We don't need GPS time
-	oLas.SetScale(0.001, 0.001, 0.001); // A value of 1,000,000 in PDR will actually be 1,000 when scale is applied
-	oLas.SetMax(1000.0, 1000.0, 1000.0);
-	oLas.SetMin(-1000.0, -1000.0, -1000.0);
+	oLas.SetScale(
+		(1.0 / static_cast<double>(oScaleDiv)),
+		(1.0 / static_cast<double>(oScaleDiv)),
+		(1.0 / static_cast<double>(oScaleDiv)));
+	oLas.SetMax(
+		(static_cast<double>(nDimens)),
+		(static_cast<double>(nDimens)),
+		(static_cast<double>(nDimens)));
+	oLas.SetMin(
+		(static_cast<double>(nDimens) * -1),
+		(static_cast<double>(nDimens) * -1),
+		(static_cast<double>(nDimens) * -1));
 
 	oLas.SetRecProvider(&oRecProv);
 	oLas.SetInout(&oFile);
@@ -1119,12 +1139,12 @@ int main(int argc, char **argv)
 	else
 	if (argc == 3)
 	{
-		modri::uint32 oPointCount = strtoul(argv[1], NULL, 10);
-		if (oPointCount > 0)
-			Test(TestLASsieToFile(oPointCount, argv[2]) == 0)
+		modri::uint32 oDimens = strtoul(argv[1], NULL, 10);
+		if (oDimens > 0)
+			Test(TestLASsieToFile(oDimens, argv[2]) == 0)
 		else
 		{
-			printf("\nPoint count value is not valid or is 0.\nRun program like:\n    testLASsie NumberOfPoints FilePath\n");
+			printf("\nPoint count value is not valid or is 0.\nRun program like:\n    testLASsie CubeDimensions FilePath\n");
 			return 1;
 		}
 	}

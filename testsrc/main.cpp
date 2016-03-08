@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <vector>
 
 // main() is at the very bottom of the file
 
@@ -21,6 +22,9 @@
 class _local_RecProvider : public modri::LASsie::RecProviderIface
 {
 	public:
+		class Gk : public modri::LASsie::GeoKey { };
+		typedef std::vector<_local_RecProvider::Gk> GkList;
+		
 		class Vlr : public modri::LASsie::VarLenRec
 		{
 			public:
@@ -39,15 +43,32 @@ class _local_RecProvider : public modri::LASsie::RecProviderIface
 		typedef std::vector<_local_RecProvider::Pdr> PdrList;
 	
 	private:
+		_local_RecProvider::GkList mGkList;
 		_local_RecProvider::VlrList mVlrList;
 		_local_RecProvider::PdrList mPdrList;
 
 	public:
+		const _local_RecProvider::GkList &GetGkList() const { return this->mGkList; }
+		_local_RecProvider::GkList &GetGkList() { return this->mGkList; }
 		const _local_RecProvider::VlrList &GetVlrList() const { return this->mVlrList; }
 		_local_RecProvider::VlrList &GetVlrList() { return this->mVlrList; }
 		const _local_RecProvider::PdrList &GetPdrList() const { return this->mPdrList; }
 		_local_RecProvider::PdrList &GetPdrList() { return this->mPdrList; }
 		
+		virtual size_t GetGeoKeyCount() const { return this->mGkList.size(); }
+		virtual bool FillGeoKey(size_t nIdx, modri::LASsie::GeoKey &nGk) const
+		{
+			if (nIdx >= this->mGkList.size())
+				return false;
+
+			const _local_RecProvider::Gk &oGk = this->mGkList.at(nIdx);
+			nGk.SetKeyId(oGk.GetKeyId());
+			nGk.SetTagLocat(oGk.GetTagLocat());
+			nGk.SetCount(oGk.GetCount());
+			nGk.SetValOffset(oGk.GetValOffset());
+			return true;
+		}
+
 		virtual size_t GetVarLenRecCount() const { return this->mVlrList.size(); }
 		virtual size_t GetVarLenRecDataSize(size_t nIdx) const { return this->mVlrList.at(nIdx).Data().Len(); }
 		virtual bool FillVarLenRec(size_t nIdx, modri::LASsie::VarLenRec &nVlr, const void *nData, size_t nDataSize) const
@@ -514,7 +535,7 @@ static int TestLASsieGenerate()
 
 	modri::LASsie oLas;
 	modri::LASsie::Guid oGuid;
-	modri::LASsie::GeoKey oGeoKey;
+	_local_RecProvider::Gk oGeoKey;
 	_local_RecProvider::Vlr oVlr;
 	_local_RecProvider::Pdr oPdr;
 	_local_RecProvider oRecProv;
@@ -552,13 +573,13 @@ static int TestLASsieGenerate()
 	oGeoKey.SetTagLocat(0x2002);
 	oGeoKey.SetCount(0x3003);
 	oGeoKey.SetValOffset(0x4004);
-	oLas.GetGeoKeys().push_back(oGeoKey);
+	oRecProv.GetGkList().push_back(oGeoKey);
 
 	oGeoKey.SetKeyId(0x5005);
 	oGeoKey.SetTagLocat(0x6006);
 	oGeoKey.SetCount(0x7007);
 	oGeoKey.SetValOffset(0x8008);
-	oLas.GetGeoKeys().push_back(oGeoKey);
+	oRecProv.GetGkList().push_back(oGeoKey);
 
 	oVlr.UserId().Set("User_VLR_1");
 	oVlr.SetRecId(0x3210);

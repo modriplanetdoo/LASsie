@@ -3,8 +3,6 @@
 
 #include "Types.h"
 
-#include <vector>
-
 namespace modri
 {
 	class LASsie
@@ -92,7 +90,6 @@ namespace modri
 					inline modri::uint16 GetValOffset() const { return this->mValOffset; }
 					inline void SetValOffset(modri::uint16 nValOffset) { this->mValOffset = nValOffset; }
 			};
-			typedef std::vector<GeoKey> GeoKeyList;
 
 			class VarLenRec
 			{
@@ -175,6 +172,8 @@ namespace modri
 			class RecProviderIface
 			{
 				public:
+					virtual size_t GetGeoKeyCount() const = 0;
+					virtual bool FillGeoKey(size_t nIdx, LASsie::GeoKey &nGk) const = 0;
 					virtual size_t GetVarLenRecCount() const = 0;
 					virtual size_t GetVarLenRecDataSize(size_t nIdx) const = 0;
 					virtual bool FillVarLenRec(size_t nIdx, LASsie::VarLenRec &nVlr, const void *nData, size_t nDataSize) const = 0;
@@ -201,6 +200,7 @@ namespace modri
 				leWriteFail,
 				leReadFail,
 				leGeoKeysSize,
+				leGeoKeyFillFail,
 				lePdrCount
 			};
 
@@ -216,8 +216,6 @@ namespace modri
 			LASsie::OffsetType mOffset;
 			LASsie::CoordEdgeType mMax;
 			LASsie::CoordEdgeType mMin;
-
-			LASsie::GeoKeyList mGeoKeys;
 
 			const LASsie::RecProviderIface *mRecProvider;
 			LASsie::InoutIface *mInout;
@@ -251,9 +249,6 @@ namespace modri
 			inline void SetMax(double nX, double nY, double nZ) { this->mMax.sX = nX; this->mMax.sY = nY; this->mMax.sZ = nZ; }
 			inline const LASsie::CoordEdgeType &GetMin() const { return this->mMin; }
 			inline void SetMin(double nX, double nY, double nZ) { this->mMin.sX = nX; this->mMin.sY = nY; this->mMin.sZ = nZ; }
-
-			inline const LASsie::GeoKeyList &GetGeoKeys() const { return this->mGeoKeys; }
-			inline LASsie::GeoKeyList &GetGeoKeys() { return this->mGeoKeys; }
 
 			inline void SetRecProvider(const LASsie::RecProviderIface *nRecProvider) { this->mRecProvider = nRecProvider; }
 			inline void SetInout(LASsie::InoutIface *nInout) { this->mInout = nInout; }

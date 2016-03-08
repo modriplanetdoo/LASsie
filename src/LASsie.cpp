@@ -249,9 +249,7 @@ bool modri::LASsie::Generate()
 
 	// VLR values
 
-	modri::uint32 oGeoKeyDataSize = 
-		static_cast<modri::uint32>(lGeoKeysHeaderSize) +
-		static_cast<modri::uint32>(this->mGeoKeys.size() * lGeoKeysEntrySize);
+	modri::uint32 oGeoKeyDataSize = static_cast<modri::uint32>(lGeoKeysHeaderSize);
 	modri::uint32 oPdOffset =
 		static_cast<modri::uint32>(lPublicHeaderSize) +
 		static_cast<modri::uint32>(lVarLenRecHeaderSize) +
@@ -260,6 +258,9 @@ bool modri::LASsie::Generate()
 
 	if (this->mRecProvider != NULL)
 	{
+		oGeoKeyDataSize += static_cast<modri::uint32>(this->mRecProvider->GetGeoKeyCount() * lGeoKeysEntrySize);
+		oPdOffset += static_cast<modri::uint32>(this->mRecProvider->GetGeoKeyCount() * lGeoKeysEntrySize);
+
 		oVlrCount += static_cast<modri::uint32>(this->mRecProvider->GetVarLenRecCount());
 		for (size_t i = (oVlrCount - 1); i-- != 0;)
 			oPdOffset += 
@@ -354,18 +355,41 @@ bool modri::LASsie::Generate()
 		return false;
 	}
 
+
 	_local_GeoKeyHeader oGkHeader;
-	_local_FillGeoKeyHeader(oGkHeader, this->mGeoKeys.size());
+	if (this->mRecProvider == NULL)
+	{
+		// No record provider; write empty GK header and return
+		_local_FillGeoKeyHeader(oGkHeader, 0);
+		if (this->mInout->Write(oGkHeader, sizeof(oGkHeader)) != true)
+		{
+			this->mLastError = LASsie::leWriteFail;
+			return false;
+		}
+		return true;
+	}
+	
+
+	// Write GKs
+	_local_FillGeoKeyHeader(oGkHeader, this->mRecProvider->GetGeoKeyCount());
 	if (this->mInout->Write(oGkHeader, sizeof(oGkHeader)) != true)
 	{
 		this->mLastError = LASsie::leWriteFail;
 		return false;
 	}
 
+	LASsie::GeoKey oGk;
 	_local_GeoKeyEntry oGkEntry;
-	for (size_t i = 0; i < this->mGeoKeys.size(); i++)
+	for (size_t i = 0; i < this->mRecProvider->GetGeoKeyCount(); i++)
 	{
-		_local_FillGeoKeyEntry(oGkEntry, this->mGeoKeys.at(i));
+		oGk.Reset();
+		if (this->mRecProvider->FillGeoKey(i, oGk) != true)
+		{
+			this->mLastError = LASsie::leGeoKeyFillFail;
+			return false;
+		}
+
+		_local_FillGeoKeyEntry(oGkEntry, oGk);
 		if (this->mInout->Write(oGkEntry, sizeof(oGkEntry)) != true)
 		{
 			this->mLastError = LASsie::leWriteFail;
@@ -373,14 +397,16 @@ bool modri::LASsie::Generate()
 		}
 	}
 
-	
-	// Nothing else to do as record provider does not exist
-	if (this->mRecProvider == NULL)
-		return true;
-
 
 	// Write VLRs
 	for (size_t i = 0; i < this->mRecProvider->GetVarLenRecCount(); i++)
+	{
+		
+	}
+
+
+	// Write PDRs
+	for (size_t i = 0; i < this->mRecProvider->GetPointDataRecCount(); i++)
 	{
 		
 	}

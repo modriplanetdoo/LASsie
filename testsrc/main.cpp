@@ -4,6 +4,7 @@
 #include <string.h>
 #include <vector>
 #include <fstream>
+#include <time.h>
 
 // main() is at the very bottom of the file
 
@@ -100,11 +101,56 @@ class _local_RecProvider : public modri::LASsie::RecProviderIface
 			nPdr.SetScanDirFlag(oPdr.GetScanDirFlag());
 			nPdr.SetFlightEdge(oPdr.IsFlightEdge());
 			nPdr.SetClassif(oPdr.GetClassif());
+			nPdr.SetSynthetic(oPdr.IsSynthetic());
+			nPdr.SetKeyPoint(oPdr.IsKeyPoint());
+			nPdr.SetWithheld(oPdr.IsWithheld());
 			nPdr.SetScanAngle(oPdr.GetScanAngle());
 			nPdr.SetUserData(oPdr.GetUserData());
 			nPdr.SetPointSrcId(oPdr.GetPointSrcId());
 			nPdr.SetGpsTime(oPdr.GetGpsTime());
 			nPdr.SetColor(oPdr.GetColor().sR, oPdr.GetColor().sG, oPdr.GetColor().sB);
+			return true;
+		}
+};
+
+class _local_RecProviderRandPdr : public modri::LASsie::RecProviderIface
+{
+	public:
+		
+
+	private:
+		modri::uint32 mPointNum;
+
+	public:
+		inline _local_RecProviderRandPdr(modri::uint32 nPointNum) : mPointNum(nPointNum) { }
+
+		virtual size_t GetGeoKeyCount() const { return 0; }
+		virtual bool FillGeoKey(size_t nIdx, modri::LASsie::GeoKey &nGk) const { return false; }
+		virtual size_t GetVarLenRecCount() const { return 0; }
+		virtual size_t GetVarLenRecDataSize(size_t nIdx) const { return 0; }
+		virtual const void *GetVarLenRecData(size_t nIdx) const { return NULL; }
+		virtual bool FillVarLenRec(size_t nIdx, modri::LASsie::VarLenRec &nVlr) const { return false; }
+
+		virtual size_t GetPointDataRecCount() const { return this->mPointNum; }
+		virtual size_t GetPointDataRecCountByRet(modri::uint8 nRet) const { return ((nRet == 0) ? this->mPointNum : 0); }
+		virtual bool FillPointDataRec(size_t nIdx, modri::LASsie::PointDataRec &nPdr) const
+		{
+			//if (nIdx >= this->mPdrList.size())
+			//	return false;
+
+			//const _local_RecProvider::Pdr &oPdr = this->mPdrList.at(nIdx);
+			//nPdr.SetCoord(oPdr.GetCoord().sX, oPdr.GetCoord().sY, oPdr.GetCoord().sZ);
+			//nPdr.SetInten(oPdr.GetInten());
+			//nPdr.SetRetNum(oPdr.GetRetNum());
+			//nPdr.SetRetTotal(oPdr.GetRetTotal());
+			//nPdr.SetScanDirFlag(oPdr.GetScanDirFlag());
+			//nPdr.SetFlightEdge(oPdr.IsFlightEdge());
+			//nPdr.SetClassif(oPdr.GetClassif());
+			//nPdr.SetScanAngle(oPdr.GetScanAngle());
+			//nPdr.SetUserData(oPdr.GetUserData());
+			//nPdr.SetPointSrcId(oPdr.GetPointSrcId());
+			//nPdr.SetGpsTime(oPdr.GetGpsTime());
+			//nPdr.SetColor(oPdr.GetColor().sR, oPdr.GetColor().sG, oPdr.GetColor().sB);
 			return true;
 		}
 };
@@ -499,6 +545,9 @@ static int TestLASsiePointDataRec()
 	Test(oPdr.GetScanDirFlag() == false);
 	Test(oPdr.IsFlightEdge() == false);
 	Test(oPdr.GetClassif() == 0);
+	Test(oPdr.IsSynthetic() == false);
+	Test(oPdr.IsKeyPoint() == false);
+	Test(oPdr.IsWithheld() == false);
 	Test(oPdr.GetScanAngle() == 0);
 	Test(oPdr.GetUserData() == 0);
 	Test(oPdr.GetPointSrcId() == 0);
@@ -533,10 +582,19 @@ static int TestLASsiePointDataRec()
 	oPdr.SetFlightEdge(false);
 	Test(oPdr.IsFlightEdge() == false);
 
-	oPdr.SetClassif(0xA5);
+	oPdr.SetClassif(0xA5); // This value is too big, but setters don't complain
 	Test(oPdr.GetClassif() == 0xA5);
 
-	oPdr.SetScanAngle(127); // Value checking will happen at generation time
+	oPdr.SetSynthetic(true);
+	Test(oPdr.IsSynthetic() == true);
+
+	oPdr.SetKeyPoint(true);
+	Test(oPdr.IsKeyPoint() == true);
+
+	oPdr.SetWithheld(true);
+	Test(oPdr.IsWithheld() == true);
+
+	oPdr.SetScanAngle(127);
 	Test(oPdr.GetScanAngle() == 127);
 	oPdr.SetScanAngle(-128);
 	Test(oPdr.GetScanAngle() == -128);
@@ -635,7 +693,10 @@ static int TestLASsieGenerate()
 	oPdr.SetRetTotal(6);
 	oPdr.SetScanDirFlag(true);
 	oPdr.SetFlightEdge(false);
-	oPdr.SetClassif(0xA5);
+	oPdr.SetClassif(0xE1); // will be masked to 1
+	oPdr.SetSynthetic(false);
+	oPdr.SetKeyPoint(true);
+	oPdr.SetWithheld(false);
 	oPdr.SetScanAngle(-120);
 	oPdr.SetUserData(0x5A);
 	oPdr.SetPointSrcId(0xFA50);
@@ -649,7 +710,10 @@ static int TestLASsieGenerate()
 	oPdr.SetRetTotal(2);
 	oPdr.SetScanDirFlag(false);
 	oPdr.SetFlightEdge(true);
-	oPdr.SetClassif(0x5A);
+	oPdr.SetClassif(0x1F); // max value
+	oPdr.SetSynthetic(true);
+	oPdr.SetKeyPoint(false);
+	oPdr.SetWithheld(true);
 	oPdr.SetScanAngle(-15);
 	oPdr.SetUserData(0xA5);
 	oPdr.SetPointSrcId(0x05AF);
@@ -949,7 +1013,7 @@ static int TestLASsieGenerate()
 		((6 & 0x07) << 3) |
 		0x40 |
 		0x00));
-	Test(*oBfrPtr++ == 0xA5);
+	Test(*oBfrPtr++ == 0x41);
 	Test(*oBfrPtr++ == static_cast<modri::uint8>(-120));
 	Test(*oBfrPtr++ == 0x5A);
 	Test(oBfrPtr[0] == 0x50);
@@ -989,7 +1053,7 @@ static int TestLASsieGenerate()
 		((2 & 0x07) << 3) |
 		0x00 |
 		0x80));
-	Test(*oBfrPtr++ == 0x5A);
+	Test(*oBfrPtr++ == 0xBF);
 	Test(*oBfrPtr++ == static_cast<modri::uint8>(-15));
 	Test(*oBfrPtr++ == 0xA5);
 	Test(oBfrPtr[0] == 0xAF);
@@ -1011,10 +1075,27 @@ static int TestLASsieGenerate()
 
 int TestLASsieToFile(modri::uint32 nPointNum, const char *nFilename)
 {
+	time_t oCreatTimeT = time(NULL);
+	struct tm oCreatTm;
+	localtime_s(&oCreatTm, &oCreatTimeT);
+
+	modri::LASsie oLas;
+	_local_RecProviderRandPdr oRecProv(nPointNum);
 	_local_InoutFile oFile;
 	Test(oFile.Open(nFilename) == true);
 
-	
+	oLas.SetFileSrcId(12345);
+	oLas.SetGlobalEnc(false);
+	oLas.GenerSw().Set("LASsie Library v1.0 Test Suite");
+	oLas.SetCreat(oCreatTm.tm_year, oCreatTm.tm_yday);
+	oLas.SetPdrFormat(modri::LASsie::pdrFormat2); // We don't need GPS time
+	oLas.SetScale(0.001, 0.001, 0.001); // A value of 1,000,000 in PDR will actually be 1,000 when scale is applied
+	oLas.SetMax(1000.0, 1000.0, 1000.0);
+	oLas.SetMin(-1000.0, -1000.0, -1000.0);
+
+	oLas.SetRecProvider(&oRecProv);
+	oLas.SetInout(&oFile);
+	Test(oLas.Generate() == true);
 
 	oFile.Close();
 	return 0;

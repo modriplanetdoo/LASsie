@@ -188,7 +188,11 @@ static inline void _local_FillPointDataRec(_local_PointDataRec &nPdrData, const 
 		((nPdr.GetRetTotal() & 0x07) << 3) |
 		((nPdr.GetScanDirFlag() == true) ? 0x40 : 0x00) |
 		((nPdr.IsFlightEdge() == true) ? 0x80 : 0x00);
-	nPdrData[15] = nPdr.GetClassif();
+	nPdrData[15] = 
+		((nPdr.GetClassif() & 0x1F)) |
+		((nPdr.IsSynthetic() == true) ? 0x20 : 0x00) |
+		((nPdr.IsKeyPoint() == true) ? 0x40 : 0x00) |
+		((nPdr.IsWithheld() == true) ? 0x80 : 0x00);
 	nPdrData[16] = nPdr.GetScanAngle();
 	nPdrData[17] = nPdr.GetUserData();
 	_local_WriteLe((nPdrData + 18), static_cast<modri::uint16>(nPdr.GetPointSrcId()));
@@ -514,6 +518,9 @@ void modri::LASsie::PointDataRec::Reset()
 	this->mScanDirFlag = false;
 	this->mFlightEdge = false;
 	this->mClassif = 0;
+	this->mSynthetic = false;
+	this->mKeyPoint = false;
+	this->mWithheld = false;
 	this->mScanAngle = 0;
 	this->mUserData = 0;
 	this->mPointSrcId = 0;

@@ -129,6 +129,9 @@ namespace modri
 					bool mScanDirFlag;
 					bool mFlightEdge;
 					modri::uint8 mClassif;
+					bool mSynthetic;
+					bool mKeyPoint;
+					bool mWithheld;
 					modri::sint8 mScanAngle;
 					modri::uint8 mUserData;
 					modri::uint16 mPointSrcId;
@@ -156,6 +159,12 @@ namespace modri
 					inline void SetFlightEdge(bool nFlightEdge) { this->mFlightEdge = nFlightEdge; }
 					inline modri::uint8 GetClassif() const { return this->mClassif; }
 					inline void SetClassif(modri::uint8 nClassif) { this->mClassif = nClassif; }
+					inline bool IsSynthetic() const { return this->mSynthetic; }
+					inline void SetSynthetic(bool nSynthetic) { this->mSynthetic = nSynthetic; }
+					inline bool IsKeyPoint() const { return this->mKeyPoint; }
+					inline void SetKeyPoint(bool nKeyPoint) { this->mKeyPoint = nKeyPoint; }
+					inline bool IsWithheld() const { return this->mWithheld; }
+					inline void SetWithheld(bool nWithheld) { this->mWithheld = nWithheld; }
 					inline modri::sint8 GetScanAngle() const { return this->mScanAngle; }
 					inline void SetScanAngle(modri::sint8 nScanAngle) { this->mScanAngle = nScanAngle; }
 					inline modri::uint8 GetUserData() const { return this->mUserData; }

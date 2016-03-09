@@ -1,7 +1,7 @@
 # Sources
 set(TEST_SOURCE_FILES
-        "main.cpp"
-    )
+		"main.cpp"
+	)
 
 # Target builds
 add_executable("test${PROJECT_NAME}" ${TEST_SOURCE_FILES})

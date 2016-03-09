@@ -10,3 +10,6 @@ endif()
 # Sub-directories
 add_subdirectory(src)
 add_subdirectory(testsrc)
+
+# Installation
+install(FILES "Find${PROJECT_NAME}.cmake" DESTINATION "cmake")

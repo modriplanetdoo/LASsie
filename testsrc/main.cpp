@@ -159,7 +159,7 @@ class _local_RecProviderRandPdr : public modri::LASsie::RecProviderIface
 				((this->mCurColor & 0x00FF00)),
 				((this->mCurColor & 0xFF0000) >> 8));
 
-			this->mCurColor++;
+			this->mCurColor += 16;
 			return true;
 		}
 };

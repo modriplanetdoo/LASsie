@@ -10,8 +10,8 @@ set(LIB_SOURCE_FILES
         "LASsie.cpp"
     )
 
-# Target build
-add_library("${PROJECT_NAME}" "${LIB_SOURCE_FILES}")
+# Target builds
+add_library("${PROJECT_NAME}" STATIC ${LIB_SOURCE_FILES})
 set_target_properties(
         "${PROJECT_NAME}"
         PROPERTIES

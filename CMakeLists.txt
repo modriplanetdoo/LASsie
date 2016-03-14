@@ -7,7 +7,7 @@ if("${CMAKE_BINARY_DIR}" STREQUAL "${CMAKE_SOURCE_DIR}")
 	message(FATAL_ERROR "In-source building not allowed.")
 endif()
 
-# 
+# CMake module paths
 if (WIN32 AND NOT CYGWIN)
 	set(LASSIE_INSTALL_CMAKE_SUBDIR "CMake")
 	set(LASSIE_INSTALL_DIR_REL2CMAKE "..")
@@ -26,6 +26,9 @@ set(LASSIE_VERSION "${LASSIE_VERSION_MAJOR}.${LASSIE_VERSION_MINOR}.${LASSIE_VER
 add_definitions("-DLASSIE_VERSION_MAJOR=${LASSIE_VERSION_MAJOR}")
 add_definitions("-DLASSIE_VERSION_MINOR=${LASSIE_VERSION_MINOR}")
 add_definitions("-DLASSIE_VERSION_PATCH=${LASSIE_VERSION_PATCH}")
+
+# Debug suffix
+set(LASSIE_LIB_DEBUG_SUFFIX "d")
 
 # Sub-directories
 add_subdirectory(src)

@@ -11,9 +11,9 @@
 
 // Macros
 
-#define _stringify(N_ELEMENT) #N_ELEMENT
-#define _stringify_indrct(N_ELEMENT) _stringify(N_ELEMENT)
-#define _file_line __FILE__ ":" _stringify_indrct(__LINE__)
+#define _stringify_indrct(N_ELEMENT) #N_ELEMENT
+#define _stringify(N_ELEMENT) _stringify_indrct(N_ELEMENT)
+#define _file_line __FILE__ ":" _stringify(__LINE__)
 
 #define PrintFn() printf(__FUNCTION__ "()\n")
 #define Test(N_CND) { if ((N_CND) == false) { printf(_file_line ": no error message\n"); return 1; } }
@@ -797,7 +797,10 @@ static int TestLASsieGenerate()
 	Test(*oBfrPtr++ == 2);
 
 	// System Identifier
-	Test(_cmp_LASsieStr("LASsie Library v1.0", oBfrPtr, 32) == 0);
+	Test(_cmp_LASsieStr("LASsie Library v"
+		_stringify(LASSIE_VERSION_MAJOR) "."
+		_stringify(LASSIE_VERSION_MINOR) "."
+		_stringify(LASSIE_VERSION_PATCH), oBfrPtr, 32) == 0);
 	oBfrPtr += 32;
 
 	// Generating Software

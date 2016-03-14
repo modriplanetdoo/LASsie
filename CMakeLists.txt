@@ -7,9 +7,36 @@ if("${CMAKE_BINARY_DIR}" STREQUAL "${CMAKE_SOURCE_DIR}")
 	message(FATAL_ERROR "In-source building not allowed.")
 endif()
 
+# 
+if (WIN32 AND NOT CYGWIN)
+	set(LASSIE_INSTALL_CMAKE_SUBDIR "CMake")
+	set(LASSIE_INSTALL_DIR_REL2CMAKE "..")
+else()
+	set(LASSIE_INSTALL_CMAKE_SUBDIR "lib/CMake/${PROJECT_NAME}")
+	set(LASSIE_INSTALL_DIR_REL2CMAKE "../../..")
+endif()
+
+# Version vars
+set(LASSIE_VERSION_MAJOR 2)
+set(LASSIE_VERSION_MINOR 3)
+set(LASSIE_VERSION_PATCH 4)
+set(LASSIE_VERSION "${LASSIE_VERSION_MAJOR}.${LASSIE_VERSION_MINOR}.${LASSIE_VERSION_PATCH}")
+
+# Compiler defines
+add_definitions("-DLASSIE_VERSION_MAJOR=${LASSIE_VERSION_MAJOR}")
+add_definitions("-DLASSIE_VERSION_MINOR=${LASSIE_VERSION_MINOR}")
+add_definitions("-DLASSIE_VERSION_PATCH=${LASSIE_VERSION_PATCH}")
+
 # Sub-directories
 add_subdirectory(src)
 add_subdirectory(testsrc)
 
+# Configure ${PROJECT_NAME}Config{,Version}.cmake files
+configure_file("${PROJECT_NAME}Config.cmake.in"        "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"        @ONLY)
+configure_file("${PROJECT_NAME}ConfigVersion.cmake.in" "${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake" @ONLY)
+
 # Installation
-install(FILES "Find${PROJECT_NAME}.cmake" DESTINATION "cmake")
+install(FILES
+	"${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
+	"${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake"
+	DESTINATION "${CMAKE_INSTALL_PREFIX}/${LASSIE_INSTALL_CMAKE_SUBDIR}")

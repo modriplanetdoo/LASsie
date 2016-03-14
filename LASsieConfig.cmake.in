@@ -1,0 +1,21 @@
+# 
+# Config file for LASsie package
+# 
+# It defines the following variables:
+#  LASSIE_INCLUDE_DIRS - include directories
+#  LASSIE_LIBRARIES    - libraries to link against
+
+get_filename_component(LASSIE_INSTALL_ROOT "${CMAKE_CURRENT_LIST_FILE}" PATH)
+set(LASSIE_INSTALL_ROOT "${LASSIE_INSTALL_ROOT}/@LASSIE_INSTALL_DIR_REL2CMAKE@")
+
+if(IS_DIRECTORY "${LASSIE_INSTALL_ROOT}/include/@PROJECT_NAME@")
+    set(LASSIE_INCLUDE_DIRS "${LASSIE_INSTALL_ROOT}/include")
+endif()
+
+find_library(LASSIE_LIBRARIES "@PROJECT_NAME@" PATHS "${LASSIE_INSTALL_ROOT}/lib")
+
+if(NOT LASSIE_INCLUDE_DIRS OR NOT LASSIE_LIBRARIES)
+    message(FATAL_ERROR "LASsie was not found")
+endif()
+
+unset(LASSIE_INSTALL_ROOT)

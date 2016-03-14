@@ -3,7 +3,14 @@
 #include <string.h>
 #include <stdio.h>
 
-static const char lSystemIdentifier[33] = "LASsie Library v1.0\0\0\0\0\0\0\0\0\0\0\0\0\0"; // NOTE: Has to be NULL-filled to the very brim
+#define _stringify_indrct(N_ELEMENT) #N_ELEMENT
+#define _stringify(N_ELEMENT) _stringify_indrct(N_ELEMENT)
+
+static const char lSystemIdentifier[] = "LASsie Library v"
+	_stringify(LASSIE_VERSION_MAJOR) "."
+	_stringify(LASSIE_VERSION_MINOR) "."
+	_stringify(LASSIE_VERSION_PATCH)
+	"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"; // NOTE: Just to be sure we have at least 32 (NULL-terminator) chars
 
 static const size_t lPublicHeaderSize =
 	 4 + // File Signature ("LASF")
@@ -271,7 +278,7 @@ bool modri::LASsie::Generate()
 	_local_MemcpyAdv(oCurPos, this->mGuid.sD4, sizeof(this->mGuid.sD4));   // GUID data 4
 	*oCurPos++ = 1; // (LASF) Version Major
 	*oCurPos++ = 2; // (LASF) Version Minor
-	_local_MemcpyAdv(oCurPos, lSystemIdentifier, (sizeof(lSystemIdentifier) - 1)); // System Identifier
+	_local_MemcpyAdv(oCurPos, lSystemIdentifier, 32); // System Identifier
 	memcpy(oCurPos, this->mGenerSw.Get(), 32); // Generating Software
 	oCurPos += 32;
 	_local_WriteLeAdv(oCurPos, static_cast<modri::uint16>(this->mCreatDay));     // File Creation Day of Year

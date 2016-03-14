@@ -2,6 +2,7 @@
 #define MODRI_LASSIE_LASSIE_H
 
 #include "Types.h"
+#include "LASsieDefs.h"
 
 namespace modri
 {

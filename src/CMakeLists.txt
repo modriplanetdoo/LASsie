@@ -33,5 +33,5 @@ set_target_properties(
 	)
 
 # Installation
-install(TARGETS "${PROJECT_NAME}" DESTINATION "lib")
+install(TARGETS "${PROJECT_NAME}" DESTINATION "lib${LASSIE_LIB_DIR_SUFFIX}")
 install(FILES ${LIB_HEADER_FILES} DESTINATION "include/${PROJECT_NAME}")

@@ -27,8 +27,13 @@ add_definitions("-DLASSIE_VERSION_MAJOR=${LASSIE_VERSION_MAJOR}")
 add_definitions("-DLASSIE_VERSION_MINOR=${LASSIE_VERSION_MINOR}")
 add_definitions("-DLASSIE_VERSION_PATCH=${LASSIE_VERSION_PATCH}")
 
-# Debug suffix
+# Suffixes
 set(LASSIE_LIB_DEBUG_SUFFIX "d")
+if("${CMAKE_SIZEOF_VOID_P}" MATCHES "8")
+	set(LASSIE_LIB_DIR_SUFFIX "64")
+else()
+    set(LASSIE_LIB_DIR_SUFFIX "")
+endif()
 
 # Sub-directories
 add_subdirectory(src)

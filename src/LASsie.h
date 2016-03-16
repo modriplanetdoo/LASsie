@@ -146,7 +146,7 @@ namespace modri
 					void Reset();
 
 					inline const PointDataRec::CoordType &GetCoord() const { return this->mCoord; }
-					inline PointDataRec::CoordType GetCoord() { return this->mCoord; }
+					inline PointDataRec::CoordType &GetCoord() { return this->mCoord; }
 					inline void SetCoord(modri::sint32 nX, modri::sint32 nY, modri::sint32 nZ) { this->mCoord.sX = nX; this->mCoord.sY = nY; this->mCoord.sZ = nZ; }
 					inline modri::uint16 GetInten() const { return this->mInten; }
 					inline void SetInten(modri::uint16 nInten) { this->mInten = nInten; }

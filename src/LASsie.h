@@ -249,18 +249,22 @@ namespace modri
 			void SetGuid(const LASsie::Guid &nGuid);
 			inline const LASsie::GenerSwType &GenerSw() const { return this->mGenerSw; }
 			inline LASsie::GenerSwType &GenerSw() { return this->mGenerSw; }
-			inline modri::uint16	GetCreatDay() const { return this->mCreatDay; }
+			inline modri::uint16 GetCreatDay() const { return this->mCreatDay; }
 			inline modri::uint16 GetCreatYear() const { return this->mCreatYear; }
 			inline void SetCreat(modri::uint16 nCreatYear, modri::uint16 nCreatDay) { this->mCreatYear = nCreatYear; this->mCreatDay = nCreatDay; }
 			inline LASsie::PdrFormat GetPdrFormat() const { return this->mPdrFormat; }
 			inline void SetPdrFormat(LASsie::PdrFormat nPdrFormat) { this->mPdrFormat = nPdrFormat; }
 			inline const LASsie::ScaleType &GetScale() const { return this->mScale; }
+			inline LASsie::ScaleType &GetScale() { return this->mScale; }
 			inline void SetScale(double nX, double nY, double nZ) { this->mScale.sX = nX; this->mScale.sY = nY; this->mScale.sZ = nZ; }
 			inline const LASsie::OffsetType &GetOffset() const { return this->mOffset; }
+			inline LASsie::OffsetType &GetOffset() { return this->mOffset; }
 			inline void SetOffset(double nX, double nY, double nZ) { this->mOffset.sX = nX; this->mOffset.sY = nY; this->mOffset.sZ = nZ; }
 			inline const LASsie::CoordEdgeType &GetMax() const { return this->mMax; }
+			inline LASsie::CoordEdgeType &GetMax() { return this->mMax; }
 			inline void SetMax(double nX, double nY, double nZ) { this->mMax.sX = nX; this->mMax.sY = nY; this->mMax.sZ = nZ; }
 			inline const LASsie::CoordEdgeType &GetMin() const { return this->mMin; }
+			inline LASsie::CoordEdgeType &GetMin() { return this->mMin; }
 			inline void SetMin(double nX, double nY, double nZ) { this->mMin.sX = nX; this->mMin.sY = nY; this->mMin.sZ = nZ; }
 
 			inline void SetRecProvider(const LASsie::RecProviderIface *nRecProvider) { this->mRecProvider = nRecProvider; }

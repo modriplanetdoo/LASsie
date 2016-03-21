@@ -7,12 +7,20 @@ if("${CMAKE_BINARY_DIR}" STREQUAL "${CMAKE_SOURCE_DIR}")
 	message(FATAL_ERROR "In-source building not allowed.")
 endif()
 
+# Suffixes
+set(LASSIE_LIB_DEBUG_SUFFIX "d")
+if("${CMAKE_SIZEOF_VOID_P}" MATCHES "8")
+	set(LASSIE_LIB_DIR_SUFFIX "64")
+else()
+	set(LASSIE_LIB_DIR_SUFFIX "")
+endif()
+
 # CMake module paths
 if (WIN32 AND NOT CYGWIN)
-	set(LASSIE_INSTALL_CMAKE_SUBDIR "CMake")
+	set(LASSIE_INSTALL_CMAKE_SUBDIR "cmake")
 	set(LASSIE_INSTALL_DIR_REL2CMAKE "..")
 else()
-	set(LASSIE_INSTALL_CMAKE_SUBDIR "lib/CMake/${PROJECT_NAME}")
+	set(LASSIE_INSTALL_CMAKE_SUBDIR "lib${LASSIE_LIB_DIR_SUFFIX}/cmake/${PROJECT_NAME}")
 	set(LASSIE_INSTALL_DIR_REL2CMAKE "../../..")
 endif()
 
@@ -26,14 +34,6 @@ set(LASSIE_VERSION "${LASSIE_VERSION_MAJOR}.${LASSIE_VERSION_MINOR}.${LASSIE_VER
 add_definitions("-DLASSIE_VERSION_MAJOR=${LASSIE_VERSION_MAJOR}")
 add_definitions("-DLASSIE_VERSION_MINOR=${LASSIE_VERSION_MINOR}")
 add_definitions("-DLASSIE_VERSION_PATCH=${LASSIE_VERSION_PATCH}")
-
-# Suffixes
-set(LASSIE_LIB_DEBUG_SUFFIX "d")
-if("${CMAKE_SIZEOF_VOID_P}" MATCHES "8")
-	set(LASSIE_LIB_DIR_SUFFIX "64")
-else()
-    set(LASSIE_LIB_DIR_SUFFIX "")
-endif()
 
 # Sub-directories
 add_subdirectory(src)
